@@ -1,5 +1,8 @@
 
-CONFIGS_REPO_URL ?= https://github.com/betaflight/config
+CONFIGS_REPO_URL ?= https://github.com/jianpingwu1/betaflight_config_gd32
+# Optional: branch to checkout for the configs repo
+# Leave empty to keep previous behavior
+CONFIGS_REPO_BRANCH ?= gd32f4-config_for_master
 # handle only this directory as config submodule
 CONFIGS_SUBMODULE_DIR = src/config
 BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
@@ -58,14 +61,30 @@ endif #config
 configs:
 ifeq ($(shell realpath $(CONFIG_DIR)),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
 	@echo "Updating config submodule: $(CONFIGS_SUBMODULE_DIR)"
-	$(V1) git submodule update --init -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
+	$(V1) git submodule update --init $(if $(strip $(CONFIGS_REPO_BRANCH)),--remote,) -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
+ifneq ($(strip $(CONFIGS_REPO_BRANCH)),)
+	$(V1) echo "Switching submodule to branch '$(CONFIGS_REPO_BRANCH)'"
+	$(V1) git -C $(CONFIGS_SUBMODULE_DIR) fetch origin $(CONFIGS_REPO_BRANCH) || { echo "Submodule fetch failed."; exit 1; }
+	$(V1) git -C $(CONFIGS_SUBMODULE_DIR) checkout $(CONFIGS_REPO_BRANCH) || { echo "Submodule checkout failed."; exit 1; }
+	$(V1) git -C $(CONFIGS_SUBMODULE_DIR) pull --ff-only origin $(CONFIGS_REPO_BRANCH) || { echo "Submodule pull failed."; exit 1; }
+endif
 	@echo "Submodule update succeeded."
 else
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
-	$(V1) git clone $(CONFIGS_REPO_URL) $(CONFIG_DIR)
+ifneq ($(strip $(CONFIGS_REPO_BRANCH)),)
+	$(V1) git clone -b $(CONFIGS_REPO_BRANCH) --single-branch $(CONFIGS_REPO_URL) $(CONFIG_DIR) || { echo "Clone with branch failed."; exit 1; }
 else
-	$(V1) git -C $(CONFIG_DIR) pull origin
+	$(V1) git clone $(CONFIGS_REPO_URL) $(CONFIG_DIR) || { echo "Clone failed."; exit 1; }
+endif
+else
+ifneq ($(strip $(CONFIGS_REPO_BRANCH)),)
+	$(V1) git -C $(CONFIG_DIR) fetch origin $(CONFIGS_REPO_BRANCH) || { echo "Fetch branch failed."; exit 1; }
+	$(V1) git -C $(CONFIG_DIR) checkout $(CONFIGS_REPO_BRANCH) || { echo "Checkout branch failed."; exit 1; }
+	$(V1) git -C $(CONFIG_DIR) pull --ff-only origin $(CONFIGS_REPO_BRANCH) || { echo "Pull branch failed."; exit 1; }
+else
+	$(V1) git -C $(CONFIG_DIR) pull origin || { echo "Pull failed."; exit 1; }
+endif
 endif
 endif
 
