@@ -1,7 +1,7 @@
 [submodule "config"]
 	path = src/config
-	url = https://github.com/betaflight/config.git
-	branch = master
+	url = https://github.com/jianpingwu1/betaflight_config_gd32.git
+	branch = gd32f4-config_for_master
 	ignore = dirty
 [submodule "lib/main/pico-sdk"]
 	path = lib/main/pico-sdk

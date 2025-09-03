@@ -1,5 +1,8 @@
 
-CONFIGS_REPO_URL ?= https://github.com/betaflight/config
+CONFIGS_REPO_URL ?= https://github.com/jianpingwu1/betaflight_config_gd32
+# Optional: branch to checkout for the configs repo
+# Leave empty to keep previous behavior
+CONFIGS_REPO_BRANCH ?= gd32f4-config_for_master
 # handle only this directory as config submodule
 CONFIGS_SUBMODULE_DIR := src/config
 BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
