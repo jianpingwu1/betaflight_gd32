@@ -1,5 +1,8 @@
 
-CONFIGS_REPO_URL ?= https://github.com/betaflight/config
+CONFIGS_REPO_URL ?= https://github.com/jianpingwu1/betaflight_config_gd32
+# Optional: branch to checkout for the configs repo
+# Leave empty to keep previous behavior
+CONFIGS_REPO_BRANCH ?= gd32f4_config_for_BF451
 
 BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
 
@@ -52,9 +55,19 @@ endif #config
 configs:
 ifeq ($(wildcard $(CONFIG_DIR)),)
 	@echo "Hydrating clone for configs: $(CONFIG_DIR)"
+ifneq ($(strip $(CONFIGS_REPO_BRANCH)),)
+	$(V0) git clone -b $(CONFIGS_REPO_BRANCH) --single-branch $(CONFIGS_REPO_URL) $(CONFIG_DIR)
+else
 	$(V0) git clone $(CONFIGS_REPO_URL) $(CONFIG_DIR)
+endif
+else
+ifneq ($(strip $(CONFIGS_REPO_BRANCH)),)
+	$(V0) git -C $(CONFIG_DIR) fetch origin $(CONFIGS_REPO_BRANCH)
+	$(V0) git -C $(CONFIG_DIR) checkout $(CONFIGS_REPO_BRANCH)
+	$(V0) git -C $(CONFIG_DIR) pull --ff-only origin $(CONFIGS_REPO_BRANCH)
 else
 	$(V0) git -C $(CONFIG_DIR) pull origin
+endif
 endif
 
 $(BASE_CONFIGS):

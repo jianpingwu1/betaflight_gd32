@@ -82,6 +82,9 @@
 #elif defined(AT32F435)
 #define BB_GPIO_PULLDOWN GPIO_PULL_DOWN
 #define BB_GPIO_PULLUP GPIO_PULL_UP
+#elif defined(GD32F4)
+#define BB_GPIO_PULLDOWN GPIO_PUPD_PULLDOWN
+#define BB_GPIO_PULLUP GPIO_PUPD_PULLUP
 #else
 #define BB_GPIO_PULLDOWN GPIO_PuPd_DOWN
 #define BB_GPIO_PULLUP   GPIO_PuPd_UP
@@ -100,6 +103,12 @@ typedef struct dmaRegCache_s {
     uint32_t CNDTR;
     uint32_t CPAR;
     uint32_t CMAR;
+    #elif defined(GD32F4)
+    uint32_t CHCTL;
+    uint32_t CHCNT;
+    uint32_t CHPADDR;
+    uint32_t CHM0ADDR;
+    uint32_t CHFCTL;
 #else
 #error No MCU dependent code here
 #endif
@@ -167,6 +176,8 @@ typedef struct bbPort_s {
     uint16_t outputARR;
 #ifdef USE_HAL_DRIVER
     LL_DMA_InitTypeDef outputDmaInit;
+#elif defined(GD32F4)
+    dma_multi_data_parameter_struct   outputDmaInit;
 #else
     DMA_InitTypeDef outputDmaInit;
 #endif
@@ -177,6 +188,8 @@ typedef struct bbPort_s {
     uint16_t inputARR;
 #ifdef USE_HAL_DRIVER
     LL_DMA_InitTypeDef inputDmaInit;
+#elif defined(GD32F4)
+    dma_multi_data_parameter_struct   inputDmaInit;
 #else
     DMA_InitTypeDef inputDmaInit;
 #endif

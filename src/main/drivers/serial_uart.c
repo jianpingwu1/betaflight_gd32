@@ -56,7 +56,7 @@
 #elif defined(STM32F7)
 #define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
 #define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4) || defined(AT32F4)
+#elif defined(STM32F4) || defined(AT32F4) || defined(GD32F4)
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else
@@ -293,6 +293,8 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
         __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
 #elif defined(USE_ATBSP_DRIVER)
         usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(USE_GDBSP_DRIVER)
+        usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
 #else
         USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
@@ -358,6 +360,8 @@ static void uartEndWrite(serialPort_t *instance)
         __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
 #elif defined(USE_ATBSP_DRIVER)
         usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(USE_GDBSP_DRIVER)
+        usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
 #else
         USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
@@ -468,6 +472,85 @@ void uartConfigureDma(uartDevice_t *uartdev)
         uartIrqHandler(uartPort); \
     }
 
+#ifdef USE_GDBSP_DRIVER
+#ifdef USE_UART0
+UART_IRQHandler(USART, 0, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
+
+#ifdef USE_UART1
+UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART2
+UART_IRQHandler(USART, 2, UARTDEV_2) // USART2 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART3
+UART_IRQHandler(UART, 3, UARTDEV_3) // USART3 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART4
+UART_IRQHandler(UART, 4, UARTDEV_4)  // UART4 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART5
+UART_IRQHandler(USART, 5, UARTDEV_5)  // UART5 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART6
+UART_IRQHandler(UART, 6, UARTDEV_6) // USART6 Rx/Tx IRQ Handler
+#endif
+
+#else  //USE_UART0
+
+#ifdef USE_UART1
+UART_IRQHandler(USART, 0, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART2
+UART_IRQHandler(USART, 1, UARTDEV_2) // USART2 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART3
+UART_IRQHandler(USART, 2, UARTDEV_3) // USART3 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART4
+UART_IRQHandler(UART, 3, UARTDEV_4)  // UART4 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART5
+UART_IRQHandler(UART, 4, UARTDEV_5)  // UART5 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART6
+UART_IRQHandler(USART, 5, UARTDEV_6) // USART6 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART7
+UART_IRQHandler(UART, 6, UARTDEV_7)  // UART7 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART8
+UART_IRQHandler(UART, 7, UARTDEV_8)  // UART8 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART9
+UART_IRQHandler(UART, 8, UARTDEV_9)  // UART9 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_UART10
+UART_IRQHandler(UART, 9, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
+#endif
+
+#ifdef USE_LPUART1
+UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
+#endif
+
+#endif   //USE_UART0
+
+#else //USE_GDBSP_DRIVER
+
+
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
 #endif
@@ -512,5 +595,6 @@ UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
 #endif
 
+#endif //USE_GDBSP_DRIVER
 
 #endif // USE_UART

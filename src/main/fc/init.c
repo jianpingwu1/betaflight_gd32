@@ -206,7 +206,9 @@ static void configureSPIBusses(void)
 
 #ifdef USE_SPI
     spiPreinit();
-
+#ifdef USE_SPI_DEVICE_0
+    spiInit(SPIDEV_0);
+#endif
 #ifdef USE_SPI_DEVICE_1
     spiInit(SPIDEV_1);
 #endif
@@ -478,7 +480,7 @@ void init(void)
     }
 #endif
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(GD32F4)
     // F4 has non-8MHz boards
     // G4 for Betaflight allow 24 or 27MHz oscillator
     systemClockSetHSEValue(systemConfig()->hseMhz * 1000000U);
@@ -493,7 +495,7 @@ void init(void)
     // Note that mcoConfigure must be augmented with an additional argument to
     // indicate which device instance to configure when MCO and MCO2 are both supported
 
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(GD32F4)
     // F4 and F7 support MCO on PA8 and MCO2 on PC9, but only MCO2 is supported for now
     mcoConfigure(MCODEV_2, mcoConfig(MCODEV_2));
 #elif defined(STM32G4)
@@ -590,6 +592,27 @@ void init(void)
     sdioPinConfigure();
     SDIO_GPIO_Init();
 #endif
+#if defined(USE_SDCARD_SDIO) && !defined(CONFIG_IN_SDCARD) && defined(GD32F4)
+    // // sdioPinConfigure();
+    // // SDIO_GPIO_Init();
+    // bool SD_Initialize_LL(DMA_Stream_TypeDef *dma);
+    // SD_Initialize_LL(NULL);
+
+    sdCardAndFSInit();
+    initFlags |= SD_INIT_ATTEMPTED;
+
+    if (!sdcard_isInserted()) {
+        failureMode(FAILURE_SDCARD_REQUIRED);
+    }
+
+    while (afatfs_getFilesystemState() != AFATFS_FILESYSTEM_STATE_READY) {
+        afatfs_poll();
+
+        if (afatfs_getFilesystemState() == AFATFS_FILESYSTEM_STATE_FATAL) {
+            failureMode(FAILURE_SDCARD_INITIALISATION_FAILED);
+        }
+    }
+#endif
 
 #ifdef USE_USB_MSC
 /* MSC mode will start after init, but will not allow scheduler to run,
@@ -641,6 +664,9 @@ void init(void)
     // Note: Unlike UARTs which are configured when client is present,
     // I2C buses are initialized unconditionally if they are configured.
 
+#ifdef USE_I2C_DEVICE_0
+    i2cInit(I2CDEV_0);
+#endif
 #ifdef USE_I2C_DEVICE_1
     i2cInit(I2CDEV_1);
 #endif

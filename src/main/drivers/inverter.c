@@ -84,6 +84,53 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 #endif
 }
 
+#if defined(GD32F4)
+
+void enableInverter(USART_TypeDef *USARTx, bool on)
+{
+    int identifier = SERIAL_PORT_NONE;
+
+#ifdef USE_UART1
+    if (USARTx == (void *)USART0) {
+        identifier = SERIAL_PORT_USART1;
+    }
+#endif
+
+#ifdef USE_UART2
+    if (USARTx == (void *)USART1) {
+        identifier = SERIAL_PORT_USART2;
+    }
+#endif
+
+#ifdef USE_UART3
+    if (USARTx == (void *)USART2) {
+        identifier = SERIAL_PORT_USART3;
+    }
+#endif
+
+#ifdef USE_UART4
+    if (USARTx == (void *)UART3) {
+        identifier = SERIAL_PORT_UART4;
+    }
+#endif
+
+#ifdef USE_UART5
+    if (USARTx == (void *)UART4) {
+        identifier = SERIAL_PORT_UART5;
+    }
+#endif
+
+#ifdef USE_UART6
+    if (USARTx == (void *)USART5) {
+        identifier = SERIAL_PORT_USART6;
+    }
+#endif
+
+    if (identifier != SERIAL_PORT_NONE) {
+        inverterSet(identifier, on);
+    }
+}
+#else
 void enableInverter(USART_TypeDef *USARTx, bool on)
 {
     int identifier = SERIAL_PORT_NONE;
@@ -128,4 +175,5 @@ void enableInverter(USART_TypeDef *USARTx, bool on)
         inverterSet(identifier, on);
     }
 }
+#endif
 #endif // USE_INVERTER

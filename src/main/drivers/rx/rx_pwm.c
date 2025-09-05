@@ -299,6 +299,8 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
         pwmInputPort->state = 1;
 #if defined(USE_HAL_DRIVER)
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_FALLING);
+#elif defined(USE_GDBSP_DRIVER)
+        UNUSED(timerHardwarePtr);
 #else
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Falling);
 #endif
@@ -313,6 +315,8 @@ static void pwmEdgeCallback(timerCCHandlerRec_t *cbRec, captureCompare_t capture
         pwmInputPort->state = 0;
 #if defined(USE_HAL_DRIVER)
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPOLARITY_RISING);
+#elif defined(USE_GDBSP_DRIVER)
+
 #else
         pwmICConfig(timerHardwarePtr->tim, timerHardwarePtr->channel, TIM_ICPolarity_Rising);
 #endif
@@ -341,6 +345,12 @@ void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
 
     HAL_TIM_IC_ConfigChannel(Handle, &TIM_ICInitStructure, channel);
     HAL_TIM_IC_Start_IT(Handle,channel);
+}
+#elif defined(USE_GDBSP_DRIVER)
+void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
+{
+    UNUSED(tim); UNUSED(channel); UNUSED(polarity);
+
 }
 #else
 void pwmICConfig(TIM_TypeDef *tim, uint8_t channel, uint16_t polarity)
@@ -394,6 +404,7 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 
 #if defined(USE_HAL_DRIVER)
         pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
+#elif defined(USE_GDBSP_DRIVER) 
 #else
         pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
 #endif
@@ -404,6 +415,12 @@ void pwmRxInit(const pwmConfig_t *pwmConfig)
 #define FIRST_PWM_PORT 0
 
 #ifdef USE_PWM_OUTPUT
+#if defined(USE_GDBSP_DRIVER)
+static void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
+{
+    UNUSED(pwmTimer);
+}
+#else
 void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
 {
     pwmOutputPort_t *motors = pwmGetMotors();
@@ -416,6 +433,7 @@ void ppmAvoidPWMTimerClash(TIM_TypeDef *pwmTimer)
         return;
     }
 }
+#endif
 #endif
 
 void ppmRxInit(const ppmConfig_t *ppmConfig)
@@ -448,6 +466,7 @@ void ppmRxInit(const ppmConfig_t *ppmConfig)
 
 #if defined(USE_HAL_DRIVER)
     pwmICConfig(timer->tim, timer->channel, TIM_ICPOLARITY_RISING);
+#elif defined(USE_GDBSP_DRIVER)  
 #else
     pwmICConfig(timer->tim, timer->channel, TIM_ICPolarity_Rising);
 #endif

@@ -50,8 +50,21 @@ static uint8_t spiRegisteredDeviceCount = 0;
 spiDevice_t spiDevice[SPIDEV_COUNT];
 busDevice_t spiBusDevice[SPIDEV_COUNT];
 
+
+#if defined(USE_GDBSP_DRIVER)
+SPIDevice spiDeviceByInstance(SPI_TypeDef *instance_)
+{
+    uint32_t instance = (uint32_t) instance_;
+#else
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
+#endif
+#ifdef USE_SPI_DEVICE_0
+    if (instance == SPI0) {
+        return SPIDEV_0;
+    }
+#endif
+
 #ifdef USE_SPI_DEVICE_1
     if (instance == SPI1) {
         return SPIDEV_1;
@@ -106,6 +119,15 @@ bool spiInit(SPIDevice device)
     case SPIINVALID:
         return false;
 
+#if defined(GD32F4)
+    case SPIDEV_0:
+#ifdef USE_SPI_DEVICE_0
+        spiInitDevice(device);
+        return true;
+#else
+        break;
+#endif
+#endif
     case SPIDEV_1:
 #ifdef USE_SPI_DEVICE_1
         spiInitDevice(device);
@@ -368,6 +390,12 @@ uint16_t spiCalculateDivider(uint32_t freq)
     }
 
     uint32_t spiClk = system_core_clock / 2;
+#elif defined(GD32F4)
+    if(freq > 30000000){
+        freq = 30000000;
+    }
+
+    uint32_t spiClk = SystemCoreClock / 2;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -394,6 +422,12 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
         return 36000000;
     }
 
+#elif defined(GD32F4)
+    uint32_t spiClk = SystemCoreClock / 2;
+
+    if ((spiClk / spiClkDivisor) > 30000000){
+        return 30000000;
+    }
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif

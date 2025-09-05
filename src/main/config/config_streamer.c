@@ -59,6 +59,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
         HAL_FLASH_Unlock();
 #elif defined(AT32F4)
         flash_unlock();
+#elif defined(GD32F4)
+        fmc_unlock();
 #else
         FLASH_Unlock();
 #endif
@@ -79,6 +81,8 @@ void config_streamer_start(config_streamer_t *c, uintptr_t base, int size)
     // NOP
 #elif defined(AT32F4)
     flash_flag_clear(FLASH_ODF_FLAG | FLASH_PRGMERR_FLAG | FLASH_EPPERR_FLAG);
+#elif defined(GD32F4)
+    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_OPERR | FMC_FLAG_WPERR | FMC_FLAG_PGMERR | FMC_FLAG_PGSERR);
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
     // NOP
 #else
@@ -319,6 +323,54 @@ static void getFLASHSectorForEEPROM(uint32_t *bank, uint32_t *sector)
         }
     }
 }
+#elif defined(GD32F4)
+/*
+Sector 0    0x08000000 - 0x08003FFF 16 Kbytes
+Sector 1    0x08004000 - 0x08007FFF 16 Kbytes
+Sector 2    0x08008000 - 0x0800BFFF 16 Kbytes
+Sector 3    0x0800C000 - 0x0800FFFF 16 Kbytes
+Sector 4    0x08010000 - 0x0801FFFF 64 Kbytes
+Sector 5    0x08020000 - 0x0803FFFF 128 Kbytes
+Sector 6    0x08040000 - 0x0805FFFF 128 Kbytes
+Sector 7    0x08060000 - 0x0807FFFF 128 Kbytes
+Sector 8    0x08080000 - 0x0809FFFF 128 Kbytes
+Sector 9    0x080A0000 - 0x080BFFFF 128 Kbytes
+Sector 10   0x080C0000 - 0x080DFFFF 128 Kbytes
+Sector 11   0x080E0000 - 0x080FFFFF 128 Kbytes
+*/
+
+uint32_t getFLASHSectorForEEPROM(void)
+{
+    if ((uint32_t)&__config_start <= 0x08003FFF)
+        return CTL_SECTOR_NUMBER_0;
+    if ((uint32_t)&__config_start <= 0x08007FFF)
+        return CTL_SECTOR_NUMBER_1;
+    if ((uint32_t)&__config_start <= 0x0800BFFF)
+        return CTL_SECTOR_NUMBER_2;
+    if ((uint32_t)&__config_start <= 0x0800FFFF)
+        return CTL_SECTOR_NUMBER_3;
+    if ((uint32_t)&__config_start <= 0x0801FFFF)
+        return CTL_SECTOR_NUMBER_4;
+    if ((uint32_t)&__config_start <= 0x0803FFFF)
+        return CTL_SECTOR_NUMBER_5;
+    if ((uint32_t)&__config_start <= 0x0805FFFF)
+        return CTL_SECTOR_NUMBER_6;
+    if ((uint32_t)&__config_start <= 0x0807FFFF)
+        return CTL_SECTOR_NUMBER_7;
+    if ((uint32_t)&__config_start <= 0x0809FFFF)
+        return CTL_SECTOR_NUMBER_8;
+    if ((uint32_t)&__config_start <= 0x080DFFFF)
+        return CTL_SECTOR_NUMBER_9;
+    if ((uint32_t)&__config_start <= 0x080BFFFF)
+        return CTL_SECTOR_NUMBER_10;
+    if ((uint32_t)&__config_start <= 0x080FFFFF)
+        return CTL_SECTOR_NUMBER_11;
+
+    // Not good
+    while (1) {
+        failureMode(FAILURE_CONFIG_STORE_FAILURE);
+    }
+}
 #endif
 #endif // CONFIG_IN_FLASH
 
@@ -478,6 +530,19 @@ static int write_word(config_streamer_t *c, config_streamer_buffer_align_type_t 
     if (status != FLASH_OPERATE_DONE) {
         return -2;
     }
+#elif defined(GD32F4)
+    if (c->address % FLASH_PAGE_SIZE == 0) {
+        const fmc_state_enum status = fmc_sector_erase(getFLASHSectorForEEPROM());
+        if (status != FMC_READY) {
+            return -1;
+        }
+    }
+
+    STATIC_ASSERT(CONFIG_STREAMER_BUFFER_SIZE == sizeof(uint32_t) * 1,  "CONFIG_STREAMER_BUFFER_SIZE does not match written size");
+    const fmc_state_enum status = fmc_word_program(c->address, (uint32_t)*buffer);
+    if (status != FMC_READY) {
+        return -2;
+    }
 #else // !STM32H7 && !STM32F7 && !STM32G4
     if (c->address % FLASH_PAGE_SIZE == 0) {
         const FLASH_Status status = FLASH_EraseSector(getFLASHSectorForEEPROM(), VoltageRange_3); //0x08080000 to 0x080A0000
@@ -543,6 +608,8 @@ int config_streamer_finish(config_streamer_t *c)
         HAL_FLASH_Lock();
 #elif defined(AT32F4)
         flash_lock();
+#elif defined(GD32F4)
+        fmc_lock();
 #else
         FLASH_Lock();
 #endif

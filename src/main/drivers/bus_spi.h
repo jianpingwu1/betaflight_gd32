@@ -64,7 +64,12 @@ typedef enum {
 
 typedef enum SPIDevice {
     SPIINVALID = -1,
+#if defined(GD32F4)
+    SPIDEV_0   = 0,
+    SPIDEV_1,
+#else
     SPIDEV_1   = 0,
+#endif
     SPIDEV_2,
     SPIDEV_3,
     SPIDEV_4,
@@ -72,7 +77,7 @@ typedef enum SPIDevice {
     SPIDEV_6
 } SPIDevice;
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(GD32F4)
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4

@@ -25,7 +25,7 @@
 #include "drivers/io_types.h"
 #include "drivers/rcc_types.h"
 
-#if defined(STM32F4) || defined(STM32F7)
+#if defined(STM32F4) || defined(STM32F7) || defined(GD32F4)
 #define ADC_TAG_MAP_COUNT 16
 #elif defined(AT32F435)
 #ifdef USE_ADC_INTERNAL
@@ -60,6 +60,18 @@ typedef struct adcTagMap_s {
 
 // Encoding for adcTagMap_t.devices
 
+#if defined(GD32F4)
+#define ADC_DEVICES_0   (1 << ADCDEV_0)
+#define ADC_DEVICES_1   (1 << ADCDEV_1)
+#define ADC_DEVICES_2   (1 << ADCDEV_2)
+#define ADC_DEVICES_3   (1 << ADCDEV_3)
+#define ADC_DEVICES_4   (1 << ADCDEV_4)
+#define ADC_DEVICES_01  ((1 << ADCDEV_0)|(1 << ADCDEV_1))
+#define ADC_DEVICES_23  ((1 << ADCDEV_2)|(1 << ADCDEV_3))
+#define ADC_DEVICES_012 ((1 << ADCDEV_0)|(1 << ADCDEV_1)|(1 << ADCDEV_2))
+#define ADC_DEVICES_234 ((1 << ADCDEV_2)|(1 << ADCDEV_3)|(1 << ADCDEV_4))
+#else
+
 #define ADC_DEVICES_1   (1 << ADCDEV_1)
 #define ADC_DEVICES_2   (1 << ADCDEV_2)
 #define ADC_DEVICES_3   (1 << ADCDEV_3)
@@ -70,12 +82,14 @@ typedef struct adcTagMap_s {
 #define ADC_DEVICES_123 ((1 << ADCDEV_1)|(1 << ADCDEV_2)|(1 << ADCDEV_3))
 #define ADC_DEVICES_345 ((1 << ADCDEV_3)|(1 << ADCDEV_4)|(1 << ADCDEV_5))
 
+#endif
+
 typedef struct adcDevice_s {
     ADC_TypeDef* ADCx;
     rccPeriphTag_t rccADC;
 #if !defined(USE_DMA_SPEC)
     dmaResource_t* dmaResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(GD32F4)
     uint32_t channel;
 #endif
 #endif // !defined(USE_DMA_SPEC)
@@ -102,7 +116,11 @@ extern adcOperatingConfig_t adcOperatingConfig[ADC_CHANNEL_COUNT];
 extern volatile uint16_t adcValues[ADC_CHANNEL_COUNT];
 
 uint8_t adcChannelByTag(ioTag_t ioTag);
+#if defined(GD32F4)
+ADCDevice adcDeviceByInstance(const uint32_t instance);
+#else
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+#endif
 bool adcVerifyPin(ioTag_t tag, ADCDevice device);
 
 // Marshall values in DMA instance/channel based order to adcChannel based order.
@@ -139,11 +157,23 @@ void adcGetChannelValues(void);
 #endif // STM32F7
 
 #ifdef STM32F4
+#if 0
 // STM32F4 stdlib does not define any of these
 #define VREFINT_CAL_VREF                   (3300U)
 #define TEMPSENSOR_CAL_VREFANALOG          (3300U)
 #define TEMPSENSOR_CAL1_TEMP               ((int32_t)  30)
 #define TEMPSENSOR_CAL2_TEMP               ((int32_t) 110)
+#else
+// For GD32F4
+#define VREFINT_EXPECTED                   (1489U)  // 1.2/3.3*4095
+#define VREFINT_CAL_VREF                   (3300U)
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               ((int32_t)  25)
+// #define TEMPSENSOR_CAL2_TEMP               ((int32_t) 110)
+#define TEMPSENSOR_CAL1_V                  (1.40f)
+#define TEMPSENSOR_SLOPE                   (-4.4f) //  mV/C
+
+#endif
 #endif
 
 #ifdef AT32F435
@@ -153,4 +183,14 @@ void adcGetChannelValues(void);
 #define TEMPSENSOR_CAL1_TEMP               (25U)
 #define TEMPSENSOR_CAL1_V                  (1.27f)
 #define TEMPSENSOR_SLOPE                   (-4.13f) //  mV/C
+#endif
+
+#ifdef GD32F4
+#define VREFINT_EXPECTED                   (1489U)  // 1.2/3.3*4095
+#define VREFINT_CAL_VREF                   (3300U)
+#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
+#define TEMPSENSOR_CAL1_TEMP               ((int32_t)  25)
+// #define TEMPSENSOR_CAL2_TEMP               ((int32_t) 110)
+#define TEMPSENSOR_CAL1_V                  (1.40f)
+#define TEMPSENSOR_SLOPE                   (-4.4f) //  mV/C
 #endif

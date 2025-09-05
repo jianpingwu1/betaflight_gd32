@@ -37,6 +37,17 @@
 // Backward compatibility for existing targets
 
 // Default pin (NONE).
+#ifdef USE_UART0
+# if !defined(UART0_RX_PIN)
+#  define UART0_RX_PIN NONE
+# endif
+# if !defined(UART0_TX_PIN)
+#  define UART0_TX_PIN NONE
+# endif
+# if !defined(INVERTER_PIN_UART0)
+#  define INVERTER_PIN_UART0 NONE
+# endif
+#endif
 
 #ifdef USE_UART1
 # if !defined(UART1_RX_PIN)
@@ -193,6 +204,9 @@ typedef struct serialDefaultPin_s {
 } serialDefaultPin_t;
 
 static const serialDefaultPin_t serialDefaultPin[] = {
+#ifdef USE_UART0
+    { SERIAL_PORT_USART0, IO_TAG(UART0_RX_PIN), IO_TAG(UART0_TX_PIN), IO_TAG(INVERTER_PIN_UART0) },
+#endif
 #ifdef USE_UART1
     { SERIAL_PORT_USART1, IO_TAG(UART1_RX_PIN), IO_TAG(UART1_TX_PIN), IO_TAG(INVERTER_PIN_UART1) },
 #endif

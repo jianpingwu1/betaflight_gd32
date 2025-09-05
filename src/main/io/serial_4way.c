@@ -53,6 +53,8 @@
 #define Bit_RESET GPIO_PIN_RESET
 #elif defined(AT32F435)
 #define Bit_RESET 0
+#elif defined(USE_GDBSP_DRIVER)
+#define Bit_RESET 0
 #endif
 
 #define USE_TXRX_LED

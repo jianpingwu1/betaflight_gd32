@@ -22,7 +22,7 @@
 
 #define SPI_TIMEOUT_US  10000
 
-#if defined(STM32F4) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32G4) || defined(GD32F4)
 #define MAX_SPI_PIN_SEL 2
 #elif defined(STM32F7) || defined(AT32F4)
 #define MAX_SPI_PIN_SEL 4

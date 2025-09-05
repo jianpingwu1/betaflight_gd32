@@ -55,6 +55,37 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
     return 0;
 }
 
+#if defined(GD32F4)
+ADCDevice adcDeviceByInstance(const uint32_t instance)
+{
+    if (instance == ADC0) {
+        return ADCDEV_0;
+    }
+
+#if defined(ADC1)
+    if (instance == ADC1) {
+        return ADCDEV_1;
+    }
+#endif
+#if defined(ADC2)
+    if (instance == ADC2) {
+        return ADCDEV_2;
+    }
+#endif
+#if defined(ADC3)
+    if (instance == ADC3) {
+        return ADCDEV_3;
+    }
+#endif
+#if defined(ADC4)
+    if (instance == ADC4) {
+        return ADCDEV_4;
+    }
+#endif
+
+    return ADCINVALID;
+}
+#else
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
     if (instance == ADC1) {
@@ -84,6 +115,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 
     return ADCINVALID;
 }
+#endif
 
 uint16_t adcGetChannel(uint8_t channel)
 {

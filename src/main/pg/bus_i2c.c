@@ -72,6 +72,9 @@ typedef struct i2cDefaultConfig_s {
 } i2cDefaultConfig_t;
 
 static const i2cDefaultConfig_t i2cDefaultConfig[] = {
+#ifdef USE_I2C_DEVICE_0
+    { I2CDEV_0, IO_TAG(I2C0_SCL_PIN), IO_TAG(I2C0_SDA_PIN), I2C0_PULLUP, I2C0_CLOCKSPEED },
+#endif
 #ifdef USE_I2C_DEVICE_1
     { I2CDEV_1, IO_TAG(I2C1_SCL_PIN), IO_TAG(I2C1_SDA_PIN), I2C1_PULLUP, I2C1_CLOCKSPEED },
 #endif

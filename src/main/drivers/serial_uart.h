@@ -28,7 +28,25 @@
 // Size must be a power of two due to various optimizations which use 'and' instead of 'mod'
 // Various serial routines return the buffer occupied size as uint8_t which would need to be extended in order to
 // increase size further.
+#if defined(USE_GDBSP_DRIVER)
+#if defined(USE_UART0)
+typedef enum {
 
+    UARTDEV_0 = 0,
+    UARTDEV_1 = 1,
+    UARTDEV_2 = 2,
+    UARTDEV_3 = 3,
+    UARTDEV_4 = 4,
+    UARTDEV_5 = 5,
+    UARTDEV_6 = 6,
+    UARTDEV_7 = 7,
+    UARTDEV_8 = 8,
+    UARTDEV_9 = 8,
+    UARTDEV_10 = 10,
+    LPUARTDEV_1 = 11,
+    UARTDEV_COUNT
+} UARTDevice_e;
+#else
 typedef enum {
     UARTDEV_1 = 0,
     UARTDEV_2 = 1,
@@ -43,6 +61,23 @@ typedef enum {
     LPUARTDEV_1 = 10,
     UARTDEV_COUNT
 } UARTDevice_e;
+#endif
+#else
+typedef enum {
+    UARTDEV_1 = 0,
+    UARTDEV_2 = 1,
+    UARTDEV_3 = 2,
+    UARTDEV_4 = 3,
+    UARTDEV_5 = 4,
+    UARTDEV_6 = 5,
+    UARTDEV_7 = 6,
+    UARTDEV_8 = 7,
+    UARTDEV_9 = 8,
+    UARTDEV_10 = 9,
+    LPUARTDEV_1 = 10,
+    UARTDEV_COUNT
+} UARTDevice_e;
+#endif
 
 STATIC_ASSERT(UARTDEV_COUNT == SERIAL_PORT_MAX_INDEX, serial_pinconfig_does_not_match_uartdevs);
 

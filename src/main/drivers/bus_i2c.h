@@ -31,13 +31,18 @@
 
 typedef enum I2CDevice {
     I2CINVALID = -1,
+#if defined(GD32F4)
+    I2CDEV_0   = 0,
+    I2CDEV_1,
+#else
     I2CDEV_1   = 0,
+#endif
     I2CDEV_2,
     I2CDEV_3,
     I2CDEV_4,
 } I2CDevice;
 
-#if defined(STM32F4)
+#if defined(STM32F4) || defined(GD32F4)
 #define I2CDEV_COUNT 3
 #elif defined(STM32F7)
 #define I2CDEV_COUNT 4

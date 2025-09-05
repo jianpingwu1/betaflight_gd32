@@ -385,6 +385,8 @@ static void onSerialRxPinChangeBL(timerCCHandlerRec_t *cbRec, captureCompare_t c
         // always half-duplex.
 #ifdef USE_HAL_DRIVER
         __HAL_TIM_SetCounter(escSerial->txTimerHandle, __HAL_TIM_GetAutoreload(escSerial->txTimerHandle) / 2);
+#elif defined(USE_GDBSP_DRIVER)
+        timer_counter_value_config((uint32_t)escSerial->txTimerHardware->tim, TIMER_CAR((uint32_t)escSerial->txTimerHardware->tim) / 2);
 #else
         TIM_SetCounter(escSerial->txTimerHardware->tim, escSerial->txTimerHardware->tim->ARR / 2);
 #endif
@@ -580,6 +582,8 @@ static void onSerialRxPinChangeEsc(timerCCHandlerRec_t *cbRec, captureCompare_t 
     //clear timer
 #ifdef USE_HAL_DRIVER
     __HAL_TIM_SetCounter(escSerial->rxTimerHandle, 0);
+#elif defined(USE_GDBSP_DRIVER)
+    timer_counter_value_config((uint32_t)escSerial->rxTimerHardware->tim, 0);
 #else
     TIM_SetCounter(escSerial->rxTimerHardware->tim,0);
 #endif

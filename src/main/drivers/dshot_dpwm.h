@@ -74,7 +74,7 @@ motorDevice_t *dshotPwmDevInit(const struct motorDevConfig_s *motorConfig, uint1
 #define DSHOT_DMA_BUFFER_ATTRIBUTE // None
 #endif
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(GD32F4)
 #define DSHOT_DMA_BUFFER_UNIT uint32_t
 #else
 #define DSHOT_DMA_BUFFER_UNIT uint8_t
@@ -131,6 +131,12 @@ typedef struct motorDmaOutput_s {
 #if defined(USE_HAL_DRIVER) && defined(USE_FULL_LL_DRIVER)
     LL_DMA_InitTypeDef    dmaInitStruct;
     uint32_t llChannel;
+#elif defined(GD32F4)
+#if 1
+    DMA_InitTypeDef   dmaInitStruct;
+#else
+    dma_multi_data_parameter_struct   dmaInitStruct;
+#endif
 #else
     DMA_InitTypeDef   dmaInitStruct;
 #endif

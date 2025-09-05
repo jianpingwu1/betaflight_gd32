@@ -25,8 +25,14 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
+#if defined(GD32F4)
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC0
+#endif
+#else
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
+#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -41,8 +47,39 @@
 #ifndef ADC3_DMA_STREAM
 #define ADC3_DMA_STREAM DMA2_Stream0 // ST0 or ST1
 #endif
+#elif defined(GD32F4)
+#ifndef ADC0_DMA_STREAM
+#define ADC0_DMA_STREAM DMA1_CH4_BASE //CH0 or CH4
 #endif
 
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA1_CH3_BASE //CH2 or CH3
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA1_CH0_BASE //CH0 or CH1
+#endif
+#endif
+
+#if defined(GD32F4)
+typedef enum ADCDevice {
+    ADCINVALID = -1,
+    ADCDEV_0   = 0,
+#if defined(ADC1)
+    ADCDEV_1,
+#endif
+#if defined(ADC2)
+    ADCDEV_2,
+#endif
+#if defined(ADC3)
+    ADCDEV_3,
+#endif
+#if defined(ADC4)
+    ADCDEV_4,
+#endif
+    ADCDEV_COUNT
+} ADCDevice;
+#else
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
@@ -60,6 +97,7 @@ typedef enum ADCDevice {
 #endif
     ADCDEV_COUNT
 } ADCDevice;
+#endif
 
 #define ADC_CFG_TO_DEV(x) ((x) - 1)
 #define ADC_DEV_TO_CFG(x) ((x) + 1)
@@ -114,5 +152,9 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 #endif
 
 #if !defined(SIMULATOR_BUILD)
+#if defined(GD32F4)
+ADCDevice adcDeviceByInstance(const uint32_t instance);
+#else
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+#endif
 #endif
