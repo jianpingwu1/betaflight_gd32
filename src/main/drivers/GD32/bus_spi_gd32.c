@@ -249,12 +249,12 @@ void spiInternalStartDMA(const extDevice_t *dev)
          */
 
         // Enable streams
-        dma_channel_enable((uint32_t)(dmaTx->dma), dmaTx->stream);
         dma_channel_enable((uint32_t)(dmaRx->dma), dmaRx->stream);
+        dma_channel_enable((uint32_t)(dmaTx->dma), dmaTx->stream);
 
         /* Enable the SPI DMA Tx & Rx requests */
-        spi_dma_enable((uint32_t)(dev->bus->busType_u.spi.instance), SPI_DMA_TRANSMIT);
         spi_dma_enable((uint32_t)(dev->bus->busType_u.spi.instance), SPI_DMA_RECEIVE);
+        spi_dma_enable((uint32_t)(dev->bus->busType_u.spi.instance), SPI_DMA_TRANSMIT);
     } else {
         // Use the correct callback argument
         dmaTx->userParam = (uint32_t)dev;

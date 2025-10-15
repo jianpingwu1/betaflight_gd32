@@ -613,6 +613,8 @@ void spiInitBusDMA(void)
      * is enabled, then don't enable DMA on an SPI bus using DMA2
      */
     const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+#elif defined(GD32F4) && defined(USE_DSHOT_BITBANG)
+    const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
 #endif
 
     for (device = 0; device < SPIDEV_COUNT; device++) {
@@ -645,13 +647,18 @@ void spiInitBusDMA(void)
                     dmaTxIdentifier = DMA_NONE;
                     break;
                 }
+#elif defined(GD32F4) && defined(USE_DSHOT_BITBANG)
+                if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 1)) {
+                    dmaTxIdentifier = DMA_NONE;
+                    break;
+                }
 #endif
                 if (!dmaAllocate(dmaTxIdentifier, OWNER_SPI_SDO, device + 1)) {
                     dmaTxIdentifier = DMA_NONE;
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(GD32F4)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -683,13 +690,18 @@ void spiInitBusDMA(void)
                     dmaRxIdentifier = DMA_NONE;
                     break;
                 }
+#elif defined(GD32F4) && defined(USE_DSHOT_BITBANG)
+                if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 1)) {
+                    dmaRxIdentifier = DMA_NONE;
+                    break;
+                }
 #endif
                 if (!dmaAllocate(dmaRxIdentifier, OWNER_SPI_SDI, device + 1)) {
                     dmaRxIdentifier = DMA_NONE;
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(GD32F4)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

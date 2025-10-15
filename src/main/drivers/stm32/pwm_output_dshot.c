@@ -130,6 +130,7 @@ static void pwmDshotSetDirectionInput(
     }
     TIM_ARRPreloadConfig(timer, ENABLE);
     timer->ARR = 0xffffffff;
+    // timer->ARR = 0x2ff;
 
     TIM_ICInit(timer, &motor->icInitStruct);
 

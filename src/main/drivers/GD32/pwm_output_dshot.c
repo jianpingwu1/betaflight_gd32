@@ -95,6 +95,27 @@ FAST_CODE void pwmDshotSetDirectionOutput(
     }
 #endif
 
+#ifdef USE_DSHOT_TELEMETRY
+#if defined(GD32F4)
+    uint32_t dmaChannel = 0;
+#endif
+#if defined(USE_DMA_SPEC)
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+
+    if (dmaSpec != NULL) {
+        dmaRef = dmaSpec->ref;
+#if defined(GD32F4)
+        dmaChannel = dmaSpec->channel;
+#endif
+    }
+#else
+    dmaRef = timerHardware->dmaRef;
+#if defined(GD32F4)
+    dmaChannel = timerHardware->dmaChannel;
+#endif
+#endif
+#endif
+// timer_disable((uint32_t)timer);
     xDMA_DeInit(dmaRef);
 
 #ifdef USE_DSHOT_TELEMETRY
@@ -121,12 +142,17 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 
 #if 1
     xDMA_Init(dmaRef, pDmaInit);
+    uint32_t temp_dma_periph;
+    int temp_dma_channel;
+    gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
+    dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, dmaChannel);
 #else
     uint32_t temp_dma_periph;
     int temp_dma_channel;
     gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
     dma_multi_data_mode_init(temp_dma_periph, temp_dma_channel, pDmaInit);
 #endif
+// timer_enable((uint32_t)timer);
     xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
 }
 
@@ -145,7 +171,33 @@ static void pwmDshotSetDirectionInput(
     uint32_t *timer = timerHardware->tim;
     dmaResource_t *dmaRef = motor->dmaRef;
 
+
+
+#ifdef USE_DSHOT_TELEMETRY
+#if defined(GD32F4)
+    uint32_t dmaChannel = 0;
+#endif
+#if defined(USE_DMA_SPEC)
+    const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
+
+    if (dmaSpec != NULL) {
+#if defined(GD32F4)
+        dmaChannel = dmaSpec->channel;
+#endif
+    }
+#else
+#if defined(GD32F4)
+    dmaChannel = timerHardware->dmaChannel;
+#endif
+#endif
+#endif
+
     xDMA_DeInit(dmaRef);
+
+    uint32_t temp_dma_periph;
+    int temp_dma_channel;
+    gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
+    dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, dmaChannel);
 
     motor->isInput = true;
     if (!inputStampUs) {
@@ -153,7 +205,7 @@ static void pwmDshotSetDirectionInput(
     }
 
     timer_auto_reload_shadow_enable((uint32_t)timer);
-    TIMER_CAR((uint32_t)timer) = 0xffffffff;
+    TIMER_CAR((uint32_t)timer) = 0x200;
     timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);
 
 #if defined(GD32F4)
@@ -196,17 +248,13 @@ void pwmCompleteDshotMotorUpdate(void)
         } else
 #endif
         {
-#if 1
 
+            timer_auto_reload_shadow_disable((uint32_t)(dmaMotorTimers[i].timer));
+            TIMER_CAR((uint32_t)(dmaMotorTimers[i].timer)) = dmaMotorTimers[i].outputPeriod;
+            timer_auto_reload_shadow_enable((uint32_t)(dmaMotorTimers[i].timer));
             timer_counter_value_config((uint32_t)(dmaMotorTimers[i].timer), 0);
             timer_dma_enable((uint32_t)(dmaMotorTimers[i].timer), dmaMotorTimers[i].timerDmaSources);
             dmaMotorTimers[i].timerDmaSources = 0;
-#else
-
-            timer_counter_value_config((uint32_t)(dmaMotorTimers[i].timer), 0);
-            timer_dma_enable((uint32_t)(dmaMotorTimers[i].timer), dmaMotorTimers[i].timerDmaSources);
-            dmaMotorTimers[i].timerDmaSources = 0;
-#endif
         }
     }
 }
@@ -239,7 +287,7 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
         }
 #endif
         DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF); 
-        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_HTF);        
+        // DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_HTF);
     }
 }
 
