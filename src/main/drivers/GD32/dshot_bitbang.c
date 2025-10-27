@@ -400,122 +400,126 @@ static void bbTimebaseSetup(bbPort_t *bbPort, motorPwmProtocolTypes_e dshotProto
 // bb only use pin info associated with timerHardware entry designated as TIM_USE_MOTOR;
 // it does not use the timer channel associated with the pin.
 static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e pwmProtocolType, uint8_t output)
- {
-     // Return if no GPIO is specified
-     if (!io) {
-         return false;
-     }
- 
-     int pinIndex = IO_GPIOPinIdx(io);
-     int portIndex = IO_GPIOPortIdx(io);
- 
-     bbPort_t *bbPort = bbFindMotorPort(portIndex);
- 
-     if (!bbPort) {
- 
-         // New port group
- 
-         bbPort = bbAllocateMotorPort(portIndex);
- 
-         if (bbPort) {
-             const timerHardware_t *timhw = bbPort->timhw;
- 
- #ifdef USE_DMA_SPEC
-             const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timhw->tim, timhw->channel, dmaGetOptionByTimer(timhw));
-             bbPort->dmaResource = dmaChannelSpec->ref;
-             bbPort->dmaChannel = dmaChannelSpec->channel;
- #else
-             bbPort->dmaResource = timhw->dmaRef;
-             bbPort->dmaChannel = timhw->dmaChannel;
- #endif
-         }
- 
-         if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
-             return false;
-         }
- 
-         bbPort->gpio = IO_GPIO(io);
- 
-         bbPort->portOutputCount = MOTOR_DSHOT_BUF_LENGTH;
-         bbPort->portOutputBuffer = &bbOutputBuffer[(bbPort - bbPorts) * MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH];
- 
-         bbPort->portInputCount = DSHOT_BB_PORT_IP_BUF_LENGTH;
-         bbPort->portInputBuffer = &bbInputBuffer[(bbPort - bbPorts) * DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_LENGTH];
- 
-         bbTimebaseSetup(bbPort, pwmProtocolType);
-         bbTIM_TimeBaseInit(bbPort, bbPort->outputARR);
-         bbTimerChannelInit(bbPort);
- 
-         bbSetupDma(bbPort);
-         bbDMAPreconfigure(bbPort, DSHOT_BITBANG_DIRECTION_OUTPUT);
-         bbDMAPreconfigure(bbPort, DSHOT_BITBANG_DIRECTION_INPUT);
- 
-         bbDMA_ITConfig(bbPort);
-     }
- 
-     bbMotors[motorIndex].pinIndex = pinIndex;
-     bbMotors[motorIndex].io = io;
-     bbMotors[motorIndex].output = output;
-     bbMotors[motorIndex].bbPort = bbPort;
- 
-     IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
- 
-     // Setup GPIO_MODER and GPIO_ODR register manipulation values
- 
-     bbGpioSetup(&bbMotors[motorIndex]);
- 
- #ifdef USE_DSHOT_TELEMETRY
-     if (useDshotTelemetry) {
-         bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_INVERTED);
-     } else
- #endif
-     {
-         bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_NONINVERTED);
-     }
- 
-     bbSwitchToOutput(bbPort);
- 
-     bbMotors[motorIndex].configured = true;
- 
-     return true;
- }
- 
- static bool bbTelemetryWait(void)
- {
-     // Wait for telemetry reception to complete
-     bool telemetryPending;
-     bool telemetryWait = false;
-     const timeUs_t startTimeUs = micros();
- 
-     do {
-         telemetryPending = false;
-         for (int i = 0; i < usedMotorPorts; i++) {
-             telemetryPending |= bbPorts[i].telemetryPending;
-         }
- 
-         telemetryWait |= telemetryPending;
- 
-         if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
-             break;
-         }
-     } while (telemetryPending);
- 
-     if (telemetryWait) {
-         DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
-     }
- 
-     return telemetryWait;
- }
- 
- static void bbUpdateInit(void)
- {
-     for (int i = 0; i < usedMotorPorts; i++) {
-         bbOutputDataClear(bbPorts[i].portOutputBuffer);
-     }
- }
- 
- static bool bbDecodeTelemetry(void)
- {
+{
+    // Return if no GPIO is specified
+    if (!io) {
+        return false;
+    }
+
+    int pinIndex = IO_GPIOPinIdx(io);
+    int portIndex = IO_GPIOPortIdx(io);
+
+    bbPort_t *bbPort = bbFindMotorPort(portIndex);
+
+    if (!bbPort) {
+
+        // New port group
+
+        bbPort = bbAllocateMotorPort(portIndex);
+
+        if (bbPort) {
+            const timerHardware_t *timhw = bbPort->timhw;
+
+#ifdef USE_DMA_SPEC
+            const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByTimerValue(timhw->tim, timhw->channel, dmaGetOptionByTimer(timhw));
+            bbPort->dmaResource = dmaChannelSpec->ref;
+            bbPort->dmaChannel = dmaChannelSpec->channel;
+#else
+            bbPort->dmaResource = timhw->dmaRef;
+            bbPort->dmaChannel = timhw->dmaChannel;
+#endif
+        }
+
+        if (!bbPort || !dmaAllocate(dmaGetIdentifier(bbPort->dmaResource), bbPort->owner.owner, bbPort->owner.resourceIndex)) {
+            bbDevice.vTable.write = motorWriteNull;
+            bbDevice.vTable.decodeTelemetry = motorDecodeTelemetryNull;
+            bbDevice.vTable.updateComplete = motorUpdateCompleteNull;
+
+            return false;
+        }
+
+        bbPort->gpio = IO_GPIO(io);
+
+        bbPort->portOutputCount = MOTOR_DSHOT_BUF_LENGTH;
+        bbPort->portOutputBuffer = &bbOutputBuffer[(bbPort - bbPorts) * MOTOR_DSHOT_BUF_CACHE_ALIGN_LENGTH];
+
+        bbPort->portInputCount = DSHOT_BB_PORT_IP_BUF_LENGTH;
+        bbPort->portInputBuffer = &bbInputBuffer[(bbPort - bbPorts) * DSHOT_BB_PORT_IP_BUF_CACHE_ALIGN_LENGTH];
+
+        bbTimebaseSetup(bbPort, pwmProtocolType);
+        bbTIM_TimeBaseInit(bbPort, bbPort->outputARR);
+        bbTimerChannelInit(bbPort);
+
+        bbSetupDma(bbPort);
+        bbDMAPreconfigure(bbPort, DSHOT_BITBANG_DIRECTION_OUTPUT);
+        bbDMAPreconfigure(bbPort, DSHOT_BITBANG_DIRECTION_INPUT);
+
+        bbDMA_ITConfig(bbPort);
+    }
+
+    bbMotors[motorIndex].pinIndex = pinIndex;
+    bbMotors[motorIndex].io = io;
+    bbMotors[motorIndex].output = output;
+    bbMotors[motorIndex].bbPort = bbPort;
+
+    IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
+
+    // Setup GPIO_MODER and GPIO_ODR register manipulation values
+
+    bbGpioSetup(&bbMotors[motorIndex]);
+
+#ifdef USE_DSHOT_TELEMETRY
+    if (useDshotTelemetry) {
+        bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_INVERTED);
+    } else
+#endif
+    {
+        bbOutputDataInit(bbPort->portOutputBuffer, (1 << pinIndex), DSHOT_BITBANG_NONINVERTED);
+    }
+
+    bbSwitchToOutput(bbPort);
+
+    bbMotors[motorIndex].configured = true;
+
+    return true;
+}
+
+static bool bbTelemetryWait(void)
+{
+    // Wait for telemetry reception to complete
+    bool telemetryPending;
+    bool telemetryWait = false;
+    const timeUs_t startTimeUs = micros();
+
+    do {
+        telemetryPending = false;
+        for (int i = 0; i < usedMotorPorts; i++) {
+            telemetryPending |= bbPorts[i].telemetryPending;
+        }
+
+        telemetryWait |= telemetryPending;
+
+        if (cmpTimeUs(micros(), startTimeUs) > DSHOT_TELEMETRY_TIMEOUT) {
+            break;
+        }
+    } while (telemetryPending);
+
+    if (telemetryWait) {
+        DEBUG_SET(DEBUG_DSHOT_TELEMETRY_COUNTS, 2, debug[2] + 1);
+    }
+
+    return telemetryWait;
+}
+
+static void bbUpdateInit(void)
+{
+    for (int i = 0; i < usedMotorPorts; i++) {
+        bbOutputDataClear(bbPorts[i].portOutputBuffer);
+    }
+}
+
+static bool bbDecodeTelemetry(void)
+{
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
 #ifdef USE_DSHOT_TELEMETRY_STATS
@@ -571,7 +575,12 @@ static bool bbMotorConfig(IO_t io, uint8_t motorIndex, motorPwmProtocolTypes_e p
     if (!bbmotor->configured) {
          return;
     }
- 
+
+    // fetch requestTelemetry from motors. Needs to be refactored.
+    motorDmaOutput_t * const motor = getMotorDmaOutput(motorIndex);
+    bbmotor->protocolControl.requestTelemetry = motor->protocolControl.requestTelemetry;
+    motor->protocolControl.requestTelemetry = false;
+
     // If there is a command ready to go overwrite the value and send that instead
     if (dshotCommandIsProcessing()) {
          value = dshotCommandGetCurrent(motorIndex);

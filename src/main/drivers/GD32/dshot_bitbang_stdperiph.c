@@ -218,8 +218,8 @@ static void bbSaveDMARegs(uint32_t dma_periph, int dma_channel, dmaRegCache_t *d
  
      // Reinitialize pacer timer for input
  
-     TIMER_CNT(&(bbPort->timhw->tim)) = 0;
-     TIMER_CAR(&(bbPort->timhw->tim)) = bbPort->inputARR;
+     TIMER_CAR((uint32_t)(bbPort->timhw->tim)) = bbPort->inputARR;
+     timer_event_software_generate((uint32_t)(bbPort->timhw->tim), TIMER_EVENT_SRC_UPG);
  
      bbDMA_Cmd(bbPort, ENABLE);
  
@@ -228,9 +228,9 @@ static void bbSaveDMARegs(uint32_t dma_periph, int dma_channel, dmaRegCache_t *d
      dbgPinLo(1);
  }
  #endif
- 
- void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
- {
+
+void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
+{
     gd32_dma_chbase_parse((uint32_t)bbPort->dmaResource, &dshot_dma_periphs[bbPort->portIndex], &dshot_dma_channels[bbPort->portIndex]);
 
     dma_multi_data_parameter_struct *dmainit = (direction == DSHOT_BITBANG_DIRECTION_OUTPUT) ?  &bbPort->outputDmaInit : &bbPort->inputDmaInit;
@@ -242,7 +242,7 @@ static void bbSaveDMARegs(uint32_t dma_periph, int dma_channel, dmaRegCache_t *d
     dmainit->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dmainit->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
     dmainit->memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-    dmainit->critical_value = DMA_FIFO_STATUS_1_WORD;
+    dmainit->critical_value = DMA_FIFO_STATUS_NODATA;
     dmainit->memory_burst_width = DMA_MEMORY_BURST_SINGLE;
     dmainit->periph_burst_width = DMA_PERIPH_BURST_SINGLE;
  
@@ -276,7 +276,7 @@ static void bbSaveDMARegs(uint32_t dma_periph, int dma_channel, dmaRegCache_t *d
         bbSaveDMARegs(dshot_dma_periphs[bbPort->portIndex], dshot_dma_channels[bbPort->portIndex], &bbPort->dmaRegInput);
  #endif
     }
- }
+}
  
  void bbTIM_TimeBaseInit(bbPort_t *bbPort, uint16_t period)
  {

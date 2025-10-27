@@ -66,10 +66,11 @@
 #define __SYSTEM_CLOCK_240M_PLL_25M_HXTAL         (uint32_t)(240000000)
 #elif (HSE_VALUE==8000000)
 #define __SYSTEM_CLOCK_240M_PLL_8M_HXTAL         (uint32_t)(240000000)
-//#define __SYSTEM_CLOCK_200M_PLL_8M_HXTAL         (uint32_t)(200000000)
+// #define __SYSTEM_CLOCK_200M_PLL_8M_HXTAL         (uint32_t)(200000000)
+// #define __SYSTEM_CLOCK_168M_PLL_8M_HXTAL         (uint32_t)(168000000)
 #else
-//#define __SYSTEM_CLOCK_240M_PLL_8M_HXTAL         (uint32_t)(240000000)
-#define __SYSTEM_CLOCK_200M_PLL_8M_HXTAL         (uint32_t)(200000000)
+#define __SYSTEM_CLOCK_240M_PLL_8M_HXTAL         (uint32_t)(240000000)
+// #define __SYSTEM_CLOCK_200M_PLL_8M_HXTAL         (uint32_t)(200000000)
 #endif
 #endif  // GD32F470 || GD32F460
 
