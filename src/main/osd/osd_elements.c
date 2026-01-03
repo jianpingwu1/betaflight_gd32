@@ -82,6 +82,11 @@
 
     The following lists the variants implemented so far (please update this as variants are added):
 
+    OSD_RTC_DATETIME
+        type 1: Full date and time (default - respects locale)
+        type 2: Short date and time (MM.DD HH:MM)
+        type 3: Time only (HH:MM:SS)
+
     OSD_ALTITUDE
         type 1: Altitude with one decimal place
         type 2: Altitude with no decimal (whole number only)
@@ -475,6 +480,9 @@ bool osdFormatRtcDateTime(char *buffer)
     }
 
     switch (activeElement.type) {
+    case OSD_ELEMENT_TYPE_3: 
+        tfp_sprintf(buffer, "%02d:%02d:%02d", dateTime.hours, dateTime.minutes, dateTime.seconds); 
+        break;
     case OSD_ELEMENT_TYPE_2:
         tfp_sprintf(buffer, "%02d.%02d %02d:%02d", dateTime.month, dateTime.day, dateTime.hours, dateTime.minutes);
         break;
@@ -1331,6 +1339,9 @@ static void osdElementLinkQuality(osdElementParms_t *element)
         const uint8_t osdRfMode = rxGetRfMode();
         tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
     } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
+        osdLinkQuality = rxGetLinkQuality();
+        tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
+    } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_MAVLINK) {
         osdLinkQuality = rxGetLinkQuality();
         tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
     } else { // 0-9

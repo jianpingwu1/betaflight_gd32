@@ -97,7 +97,6 @@ typedef struct rcSmoothingFilter_s {
     uint16_t throttleCutoffFrequency;
 
     uint8_t debugAxis;
-    bool shouldRecalculateCutoffs;
 
     float autoSmoothnessFactorSetpoint;
     float autoSmoothnessFactorThrottle;
@@ -139,3 +138,7 @@ void processRcStickPositions(void);
 bool isUsingSticksForArming(void);
 
 void rcControlsInit(void);
+
+bool wasLastDisarmUserRequested(void); // Check if the user has requested a disarm since the last cleared
+
+void clearWasLastDisarmUserRequested(void); // Clear the user disarm request flag
