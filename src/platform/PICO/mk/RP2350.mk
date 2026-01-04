@@ -21,6 +21,18 @@ ifneq ($(PICO_TRACE),)
 include $(PICO_MK_DIR)/PICO_trace.mk
 endif
 
+ifneq ($(TEST_PIO_DEBUG),)
+# DSHOT bidir debugging
+# Hellbender: 8, 9 appear on J7 (GNSS/GPS connector, currently unused)
+# 18, 19 currently not connected, harmless to use
+DEVICE_FLAGS += \
+    -DDSHOT_DEBUG_PIO \
+    -DDSHOT_DEBUG_SIDE0=8 \
+    -DDSHOT_DEBUG_SIDE1=9 \
+    -DDSHOT_DEBUG_SIDE2=18 \
+    -DDSHOT_DEBUG_SIDE3=19
+endif
+
 RP2350_TARGETS = RP2350A RP2350B
 ifneq ($(filter $(TARGET_MCU), $(RP2350_TARGETS)),)
 RP2350_TARGET = $(TARGET_MCU)
@@ -449,7 +461,8 @@ DEVICE_FLAGS    += \
             -DPICO_NO_HARDWARE=0 \
             -DPICO_ON_DEVICE=1 \
             -DPICO_RP2350=1 \
-            -DPICO_USE_BLOCKED_RAM=0
+            -DPICO_USE_BLOCKED_RAM=0 \
+            -DPICO_CORE1_STACK_SIZE=0x1000
 
 ifeq ($(RUN_FROM_RAM),1)
 LD_SCRIPT       = $(LINKER_DIR)/pico_rp2350_RunFromRAM.ld
@@ -523,11 +536,13 @@ MCU_COMMON_SRC = \
             PICO/config_flash.c \
             PICO/debug_pico.c \
             PICO/dma_pico.c \
+            PICO/dshot_bidir_pico.c \
             PICO/dshot_pico.c \
             PICO/exti_pico.c \
             PICO/io_pico.c \
             PICO/persistent.c \
-            PICO/pwm_pico.c \
+            PICO/pwm_motor_pico.c \
+            PICO/pwm_servo_pico.c \
             PICO/pwm_beeper_pico.c \
             PICO/serial_usb_vcp_pico.c \
             PICO/system.c \

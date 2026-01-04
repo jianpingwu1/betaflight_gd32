@@ -59,19 +59,19 @@ typedef struct
 
 #ifdef GD32F4
 
-#define SPI_TRAIT_AF_PORT       1
-#define SPI_TRAIT_AF_PIN        1
-#define I2C_TRAIT_STATE         1
-#define I2C_TRAIT_AF_PIN        1
-#define I2CDEV_COUNT            3
-#define PLATFORM_TRAIT_RCC      1
-#define UART_TRAIT_AF_PORT      1
-#define UART_TRAIT_AF_PIN       1
-#define UART_TRAIT_PINSWAP      1
-#define SERIAL_TRAIT_PIN_CONFIG 1
-#define DMA_TRAIT_CHANNEL       1
-
 #define PLATFORM_TRAIT_ADC_DEVICE 1
+
+#define SPI_TRAIT_AF_PORT         1
+#define SPI_TRAIT_AF_PIN          1
+#define I2C_TRAIT_STATE           1
+#define I2C_TRAIT_AF_PIN          1
+#define I2CDEV_COUNT              3
+#define PLATFORM_TRAIT_RCC        1
+#define UART_TRAIT_AF_PORT        1
+#define UART_TRAIT_AF_PIN         1
+#define UART_TRAIT_PINSWAP        1
+#define SERIAL_TRAIT_PIN_CONFIG   1
+#define DMA_TRAIT_CHANNEL         1
 
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
@@ -105,12 +105,8 @@ typedef struct DMA_Channel_TypeDef DMA_Channel_TypeDef;
 typedef struct SPI_TypeDef         SPI_TypeDef;
 typedef struct ADC_TypeDef         ADC_TypeDef;
 typedef struct USART_TypeDef       USART_TypeDef;
-typedef struct TIM_Cmd             TIM_Cmd;
-typedef struct TIM_CtrlPWMOutputs  TIM_CtrlPWMOutputs;
-typedef struct TIM_TimeBaseInit    TIM_TimeBaseInit;
-typedef struct TIM_ARRPreloadConfig TIM_ARRPreloadConfig;
-typedef struct EXTI_TypeDef         EXTI_TypeDef;
-typedef struct EXTI_InitTypeDef     EXTI_InitTypeDef;
+typedef struct EXTI_TypeDef        EXTI_TypeDef;
+typedef struct EXTI_InitTypeDef    EXTI_InitTypeDef;
 #define DMA_InitTypeDef            dma_general_config_struct
 #define TIM_OCInitTypeDef          timer_oc_parameter_struct
 #define TIM_ICInitTypeDef          timer_ic_parameter_struct
@@ -203,7 +199,7 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define IOCFG_AF_PP          IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
 #define IOCFG_AF_PP_PD       IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN)
 #define IOCFG_AF_PP_UP       IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
-#define IOCFG_AF_OD          IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
+#define IOCFG_AF_OD          IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_OD, GPIO_PUPD_NONE)
 #define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT,  0, 0,             GPIO_PUPD_PULLDOWN)
 #define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT,  0, 0,             GPIO_PUPD_PULLUP)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT,  0, 0,             GPIO_PUPD_NONE)
@@ -229,7 +225,7 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #if defined(GD32F425)
 #define SPIDEV_COUNT 3
 #elif defined(GD32F460)
-#define SPIDEV_COUNT 5
+#define SPIDEV_COUNT 6
 #endif
 #else
 #define SPIDEV_COUNT 4
@@ -259,7 +255,6 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define UART_REG_TXD(base) (USART_DATA((uint32_t)base))
 #endif
 
-#define SERIAL_TRAIT_PIN_CONFIG 1
 #define USB_DP_PIN PA12
 
 // Select UART prefix according to UART_DEV

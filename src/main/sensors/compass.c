@@ -46,7 +46,7 @@
 #include "drivers/compass/compass_lis2mdl.h"
 #include "drivers/compass/compass_lis3mdl.h"
 #include "drivers/compass/compass_mpu925x_ak8963.h"
-#include "drivers/compass/compass_qmc5883l.h"
+#include "drivers/compass/compass_qmc5883.h"
 #include "drivers/compass/compass_ist8310.h"
 
 #include "drivers/io.h"
@@ -307,7 +307,7 @@ static bool compassDetect(magDev_t *magDev, uint8_t *alignment)
             dev->busType_u.i2c.address = compassConfig()->mag_i2c_address;
         }
 
-        if (qmc5883lDetect(magDev)) {
+        if (qmc5883Detect(magDev)) {
             magHardware = MAG_QMC5883;
             break;
         }
@@ -382,7 +382,15 @@ bool compassInit(void)
         magDev.magAlignment = compassConfig()->mag_alignment;
     }
 
-    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &compassConfig()->mag_customAlignment);
+    // Custom alignments are applied via a transposed rotation matrix (matrixTrnVectorMul),
+    // which reverses rotation direction. Negate angles for mag so the resulting rotation
+    // matches the user-entered convention and the standard CW alignments.
+    sensorAlignment_t magCustomAlignment = compassConfig()->mag_customAlignment;
+    magCustomAlignment.roll = -magCustomAlignment.roll;
+    magCustomAlignment.pitch = -magCustomAlignment.pitch;
+    magCustomAlignment.yaw = -magCustomAlignment.yaw;
+
+    buildRotationMatrixFromAngles(&magDev.rotationMatrix, &magCustomAlignment);
 
     compassBiasEstimatorInit(&compassBiasEstimator, LAMBDA_MIN, P0);
 
