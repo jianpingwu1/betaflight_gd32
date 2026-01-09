@@ -19,7 +19,6 @@
  */
 
 // GDY112X pressure sensor driver for Betaflight
-// See datasheet at https://www.infineon.com/dgdl/Infineon-DPS310-DataSheet-v01_02-EN.pdf?fileId=5546d462576f34750157750826c42242
 
 #include <stdbool.h>
 #include <stdint.h>
