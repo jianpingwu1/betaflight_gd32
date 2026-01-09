@@ -315,6 +315,7 @@ COMMON_SRC += \
             drivers/barometer/barometer_lps.c \
             drivers/barometer/barometer_ms5611.c \
             drivers/barometer/barometer_qmp6988.c \
+            drivers/barometer/barometer_gdy112x.c \
             drivers/barometer/barometer_virtual.c \
             drivers/compass/compass_ak8963.c \
             drivers/compass/compass_ak8975.c \
