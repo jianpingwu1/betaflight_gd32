@@ -4,8 +4,12 @@ CONFIGS_REPO_URL ?= https://github.com/jianpingwu1/betaflight_config_gd32
 # Leave empty to keep previous behavior
 CONFIGS_REPO_BRANCH ?= gd32f4-config_for_master
 # handle only this directory as config submodule
-CONFIGS_SUBMODULE_DIR = src/config
-BASE_CONFIGS      = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
+CONFIGS_SUBMODULE_DIR := src/config
+BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard $(CONFIG_DIR)/configs/*/config.h)))))
+
+ifneq ($(words $(CONFIG_DIR)),1)
+$(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
+endif
 
 ifneq ($(filter-out %_sdk %_install test% %_clean clean% %-print %.hex %.h hex checks help configs $(BASE_TARGETS) $(BASE_CONFIGS),$(MAKECMDGOALS)),)
 ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
@@ -32,9 +36,11 @@ TARGET_FLAGS += -DUSE_CONFIG_SOURCE
 endif
 
 CONFIG_REVISION := norevision
-ifeq ($(shell git -C $(CONFIG_DIR) diff --shortstat),)
-CONFIG_REVISION := $(shell git -C $(CONFIG_DIR) log -1 --format="%h")
+ifeq ($(shell git -C "$(CONFIG_DIR)" rev-parse --is-inside-work-tree 2>/dev/null),true)
+ifeq ($(strip $(shell git -C "$(CONFIG_DIR)" status --porcelain -uno 2>/dev/null)),)
+CONFIG_REVISION := $(shell git -C "$(CONFIG_DIR)" rev-parse --short=7 HEAD 2>/dev/null)
 CONFIG_REVISION_DEFINE := -D'__CONFIG_REVISION__="$(CONFIG_REVISION)"'
+endif
 endif
 
 # Extract constants from $(CONFIG_HEADER_FILE) via preprocessor expansion
@@ -63,7 +69,7 @@ endif #config
 
 .PHONY: configs
 configs:
-ifeq ($(shell realpath $(CONFIG_DIR)),$(shell realpath $(CONFIGS_SUBMODULE_DIR)))
+ifeq ($(shell realpath "$(CONFIG_DIR)"),$(shell realpath "$(CONFIGS_SUBMODULE_DIR)"))
 	@echo "Updating config submodule: $(CONFIGS_SUBMODULE_DIR)"
 	$(V1) git submodule update --init $(if $(strip $(CONFIGS_REPO_BRANCH)),--remote,) -- $(CONFIGS_SUBMODULE_DIR) || { echo "Config submodule update failed. Please check your git configuration."; exit 1; }
 ifneq ($(strip $(CONFIGS_REPO_BRANCH)),)
