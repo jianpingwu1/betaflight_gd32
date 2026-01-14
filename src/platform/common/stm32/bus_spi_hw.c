@@ -58,7 +58,7 @@ FAST_IRQ_HANDLER static void spiRxIrqHandler(dmaChannelDescriptor_t* descriptor)
     spiInternalStopDMA(dev);
 
 #ifdef __DCACHE_PRESENT
-#ifdef STM32H7
+#if defined(STM32H7) || defined(GD32H7)
     if (bus->curSegment->u.buffers.rxData &&
         ((bus->curSegment->u.buffers.rxData < &_dmaram_start__) || (bus->curSegment->u.buffers.rxData >= &_dmaram_end__))) {
 #else
@@ -118,6 +118,12 @@ uint16_t spiCalculateDivider(uint32_t freq)
     }
 
     uint32_t spiClk = SystemCoreClock / 2;
+#elif defined(GD32H7)
+    if(freq > 100000000){
+        freq = 100000000;
+    }
+
+    uint32_t spiClk = SystemCoreClock / 2;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -148,6 +154,12 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
 
     if ((spiClk / spiClkDivisor) > 30000000){
         return 30000000;
+    }
+#elif defined(GD32H7)
+    uint32_t spiClk = SystemCoreClock / 4;
+
+    if ((spiClk / spiClkDivisor) > 100000000){
+        return 100000000;
     }
 #else
 #error "Base SPI clock not defined for this architecture"
@@ -204,7 +216,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -242,7 +254,7 @@ void spiInitBusDMA(void)
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

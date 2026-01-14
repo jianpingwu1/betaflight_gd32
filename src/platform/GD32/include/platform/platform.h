@@ -34,9 +34,23 @@
 #define GD32F4
 #endif
 
+#elif defined(GD32H737) || defined(GD32H757) || defined(GD32H759)
+#include "gd32h7xx.h"
+
+// Chip Unique ID on H7xx
+#define U_ID_0 (*(uint32_t*)0x1ff0f7e8)
+#define U_ID_1 (*(uint32_t*)0x1ff0f7ec)
+#define U_ID_2 (*(uint32_t*)0x1ff0f7f0)
+
+#ifndef GD32H7
+#define GD32H7
 #endif
 
-#ifdef GD32F4
+#define MAX_MPU_REGIONS    16
+
+#endif
+
+#if defined(GD32F4) || defined(GD32H7)
 
 /* DMA data mode type */
 typedef enum {
@@ -48,30 +62,26 @@ typedef enum {
 typedef struct
 {
     dma_data_mode_enum data_mode;
+#if defined(GD32F4)
     dma_subperipheral_enum sub_periph;
+#endif
     union {
         dma_single_data_parameter_struct init_struct_s;
         dma_multi_data_parameter_struct  init_struct_m;
     } config;
 } dma_general_config_struct;  //todo: move to dma_bsp.h
 
-#endif // GD32F4
+#endif // GD32F4 || GD32H7
 
 #ifdef GD32F4
 
-#define PLATFORM_TRAIT_ADC_DEVICE 1
-
-#define SPI_TRAIT_AF_PORT         1
-#define SPI_TRAIT_AF_PIN          1
-#define I2C_TRAIT_STATE           1
-#define I2C_TRAIT_AF_PIN          1
-#define I2CDEV_COUNT              3
-#define PLATFORM_TRAIT_RCC        1
-#define UART_TRAIT_AF_PORT        1
-#define UART_TRAIT_AF_PIN         1
-#define UART_TRAIT_PINSWAP        1
-#define SERIAL_TRAIT_PIN_CONFIG   1
-#define DMA_TRAIT_CHANNEL         1
+#define SPI_TRAIT_AF_PORT       1
+#define SPI_TRAIT_AF_PIN        1
+#define I2C_TRAIT_STATE         1
+#define I2C_TRAIT_AF_PIN        1
+#define I2CDEV_COUNT            3
+#define UART_TRAIT_AF_PORT      1
+// #define SERIAL_TRAIT_PIN_CONFIG 1
 
 #define USE_FAST_DATA
 #define USE_RPM_FILTER
@@ -86,6 +96,43 @@ typedef struct
 #define USE_PERSISTENT_OBJECTS
 #define USE_LATE_TASK_STATISTICS
 
+#endif // GD32F4
+
+#ifdef GD32H7
+
+#define SPI_TRAIT_AF_PIN          1
+#define I2C_TRAIT_STATE           1
+#define I2C_TRAIT_AF_PIN          1
+#define UART_TRAIT_AF_PIN         1
+// #define UART_TRAIT_PINSWAP        1
+#define I2CDEV_COUNT              4
+
+#ifdef USE_DSHOT
+#define USE_DSHOT_CACHE_MGMT
+#endif
+
+#define USE_ITCM_RAM
+#define USE_FAST_DATA
+#define USE_RPM_FILTER
+#define USE_DYN_IDLE
+#define USE_DYN_NOTCH_FILTER
+#define USE_ADC_INTERNAL
+#define USE_USB_CDC_HID
+#define USE_DMA_SPEC
+#define USE_PERSISTENT_OBJECTS
+#define USE_DMA_RAM
+#define USE_USB_MSC
+#define USE_RTC_TIME
+#define USE_PERSISTENT_MSC_RTC
+#define USE_LATE_TASK_STATISTICS
+#endif // GD32H7
+
+#define PLATFORM_TRAIT_ADC_DEVICE    1
+#define PLATFORM_TRAIT_RCC           1
+#define UART_TRAIT_PINSWAP           1
+#define SERIAL_TRAIT_PIN_CONFIG      1
+#define DMA_TRAIT_CHANNEL            1
+
 #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
 #define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
 #define READ_BIT(REG, BIT)    ((REG) & (BIT))
@@ -93,6 +140,10 @@ typedef struct
 #define WRITE_REG(REG, VAL)   ((REG) = (VAL))
 #define READ_REG(REG)         ((REG))
 #define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
+
+#if defined(GD32H7)
+typedef struct OCTOSPI_TypeDef     OCTOSPI_TypeDef;
+#endif
 
 typedef struct I2C_TypeDef         I2C_TypeDef;
 typedef struct I2C_HandleTypeDef   I2C_HandleTypeDef;
@@ -139,16 +190,12 @@ extern void timerOCModeConfig(void *tim, uint8_t channel, uint16_t ocmode);
 extern void gd32_timer_input_capture_config(void* timer, uint16_t channel, uint8_t state);
 extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 
-#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
-#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
-
-#endif // GD32F4
 
 #define USE_ADC_DEVICE_0
 
 #define GPIOA_BASE    GPIOA
 
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
 #define TASK_GYROPID_DESIRED_PERIOD     125 // 125us = 8kHz
 #define SCHEDULER_DELAY_LIMIT           10
 #else
@@ -160,6 +207,8 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 
 #if defined(GD32F4)
 #define FAST_IRQ_HANDLER
+#elif defined(GD32H7)
+#define FAST_IRQ_HANDLER FAST_CODE
 #endif
 
 #if defined(GD32F4)
@@ -167,15 +216,24 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define DMA_DATA_ZERO_INIT
 #define DMA_DATA
 #define STATIC_DMA_DATA_AUTO        static
+#elif defined(GD32H7)
+#define DMA_DATA_ZERO_INIT          __attribute__ ((section(".dmaram_bss"), aligned(32)))
+#define DMA_DATA                    __attribute__ ((section(".dmaram_data"), aligned(32)))
+#define STATIC_DMA_DATA_AUTO        static DMA_DATA
 #endif
 
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
 // Data in RAM which is guaranteed to not be reset on hot reboot
 #define PERSISTENT                  __attribute__ ((section(".persistent_data"), aligned(4)))
 #endif
 
 #ifdef USE_DMA_RAM
-// Reserved for other GD series
+#if defined(GD32H7)
+#define DMA_RAM __attribute__((section(".DMA_RAM"), aligned(32)))
+#define DMA_RW_AXI __attribute__((section(".DMA_RW_AXI"), aligned(32)))
+extern uint8_t _dmaram_start__;
+extern uint8_t _dmaram_end__;
+#endif
 #else
 #define DMA_RAM
 #define DMA_RW_AXI
@@ -188,13 +246,21 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define USE_TIMER_MGMT
 #define USE_TIMER_AF
 
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
+#define CAMERA_CONTROL_HARDWARE_PWM_AVAILABLE
+#endif
+
+#if defined(GD32F4) || defined(GD32H7)
 
 #define IO_CONFIG(mode, speed, otype, pupd) ((mode) | ((speed) << 2) | ((otype) << 4) | ((pupd) << 5))
 
 #define IOCFG_OUT_PP         IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
 #define IOCFG_OUT_PP_UP      IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
+#if defined(GD32H7)
+#define IOCFG_OUT_PP_60      IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
+#else
 #define IOCFG_OUT_PP_25      IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_25MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
+#endif
 #define IOCFG_OUT_OD         IO_CONFIG(GPIO_MODE_OUTPUT, 0, GPIO_OTYPE_OD, GPIO_PUPD_NONE)
 #define IOCFG_AF_PP          IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
 #define IOCFG_AF_PP_PD       IO_CONFIG(GPIO_MODE_AF,  0, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN)
@@ -203,11 +269,18 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define IOCFG_IPD            IO_CONFIG(GPIO_MODE_INPUT,  0, 0,             GPIO_PUPD_PULLDOWN)
 #define IOCFG_IPU            IO_CONFIG(GPIO_MODE_INPUT,  0, 0,             GPIO_PUPD_PULLUP)
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT,  0, 0,             GPIO_PUPD_NONE)
+#if defined(GD32H7)
+#define IOCFG_IPU_60         IO_CONFIG(GPIO_MODE_INPUT,  GPIO_OSPEED_60MHZ, 0, GPIO_PUPD_PULLUP)
+#else
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT,  GPIO_OSPEED_25MHZ, 0, GPIO_PUPD_PULLUP)
-
 #endif
 
+#endif  // GD32F4 || GD32H7
+
 #if defined(GD32F4)
+#define FLASH_CONFIG_BUFFER_TYPE uint32_t
+#elif defined(GD32H7)
+// #define FLASH_CONFIG_STREAMER_BUFFER_SIZE 32  // Flash word = 256-bits (8 rows, uint32_t per row - 8 x 32)
 #define FLASH_CONFIG_BUFFER_TYPE uint32_t
 #endif
 
@@ -217,6 +290,12 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_MODE_AF,  GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
 #define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
 #define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT,  GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
+#elif defined(GD32H7)
+#define SPI_IO_AF_CFG           IO_CONFIG(GPIO_MODE_AF,  GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
+#define SPI_IO_AF_SCK_CFG       IO_CONFIG(GPIO_MODE_AF,  GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN)
+#define SPI_IO_AF_SDI_CFG       IO_CONFIG(GPIO_MODE_AF,  GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
+#define SPI_IO_CS_CFG           IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_NONE)
+#define SPI_IO_CS_HIGH_CFG      IO_CONFIG(GPIO_MODE_INPUT,  GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP)
 #else
 #error "Invalid GD32 MCU defined - requires SPI implementation"
 #endif
@@ -227,6 +306,8 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #elif defined(GD32F460)
 #define SPIDEV_COUNT 6
 #endif
+#elif defined(GD32H7)
+#define SPIDEV_COUNT 6
 #else
 #define SPIDEV_COUNT 4
 #endif
@@ -235,6 +316,8 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 
 #if defined(GD32F4)
 #define MAX_SPI_PIN_SEL 3
+#elif defined(GD32H7)
+#define MAX_SPI_PIN_SEL 5
 #else
 #error Unknown MCU family
 #endif
@@ -243,16 +326,29 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define USE_TX_IRQ_HANDLER
 #endif
 
+#if defined(GD32H7)
+#define UART_TX_BUFFER_ATTRIBUTE DMA_RAM /* SRAM0_1 SRAM */
+#define UART_RX_BUFFER_ATTRIBUTE DMA_RAM /* SRAM0_1 SRAM */
+#else
+#define UART_TX_BUFFER_ATTRIBUTE /* EMPTY */
+#define UART_RX_BUFFER_ATTRIBUTE /* EMPTY */
+#endif
+
 // all pins on given uart use same AF
 
 
 #if defined(GD32F4)
 #define UARTHARDWARE_MAX_PINS 4
+#elif defined(GD32H7)
+#define UARTHARDWARE_MAX_PINS 6
 #endif
 
 #if defined(GD32F4)
 #define UART_REG_RXD(base) (USART_DATA((uint32_t)base))
 #define UART_REG_TXD(base) (USART_DATA((uint32_t)base))
+#elif defined(GD32H7)
+#define UART_REG_RXD(base) (USART_RDATA((uint32_t)base))
+#define UART_REG_TXD(base) (USART_TDATA((uint32_t)base))
 #endif
 
 #define USB_DP_PIN PA12
@@ -273,13 +369,64 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define _UART_GET_PREFIX_UARTDEV_10 USART
 #define _UART_GET_PREFIX_UARTDEV_LP1 LPUART
 
-// #if defined(GD32F4)
+
+#if defined(GD32H7)
+#define DMA_CHANREQ_STRING "Request"
+// #define ADC_INTERNAL_VBAT4_ENABLED 1
+#endif
+
+#ifdef USE_ITCM_RAM
+#if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
+#define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
+#else
+// #define FAST_CODE                   __attribute__((section(".tcm_code")))
+#define FAST_CODE
+#endif
+// If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
+// cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM but if FAST_CODE_PREF is not
+// defined for the target, FAST_CODE_PREF will become an alias to FAST_CODE (in the common post
+// header file), and functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
+
+#define FAST_CODE_NOINLINE          NOINLINE
+#endif // USE_ITCM_RAM
+
+
+#ifdef USE_FAST_DATA
+#define FAST_DATA_ZERO_INIT         __attribute__ ((section(".fastram_bss"), aligned(4)))
+#define FAST_DATA                   __attribute__ ((section(".fastram_data"), aligned(4)))
+#endif // USE_FAST_DATA
+
+
+// #if defined(GD32F4) || defined(GD32H7)
 // We need to redefine ADC0, ADC1, etc.,
 // in the GD firmware library to be compatible with
 // such as the ADC_TypeDef * type in BF.
+
+#if 0
+#define GD_ADC0    ((ADC_TypeDef*)ADC0))
+#define GD_ADC1    ((ADC_TypeDef*)(ADC1))
+#define GD_ADC2    ((ADC_TypeDef*)(ADC2))
+
+#define GD_SPI0    ((SPI_TypeDef*)(SPI0))
+#define GD_SPI1    ((SPI_TypeDef*)SPI1)
+#define GD_SPI2    ((SPI_TypeDef*)SPI2)
+#define GD_SPI3    ((SPI_TypeDef*)SPI3)
+#define GD_SPI4    ((SPI_TypeDef*)SPI4)
+#define GD_SPI5    ((SPI_TypeDef*)SPI5)
+
+#define GD_OCTOSPI1    ((OCTOSPI_TypeDef*)OSPI_BASE)
+
+
+#else
+#if defined(GD32H7)
+#define GD_ADC0    ((ADC_TypeDef*)ADC_BASE)
+#define GD_ADC1    ((ADC_TypeDef*)(ADC_BASE + 0x400))
+#define GD_ADC2    ((ADC_TypeDef*)(ADC_BASE + 0x800))
+#else
 #define GD_ADC0    ((ADC_TypeDef*)ADC_BASE)
 #define GD_ADC1    ((ADC_TypeDef*)(ADC_BASE + 0x100))
 #define GD_ADC2    ((ADC_TypeDef*)(ADC_BASE + 0x200))
+#endif
 #undef ADC0
 #define ADC0       ((ADC_TypeDef*)GD_ADC0)
 #undef ADC1
@@ -292,7 +439,11 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define GD_SPI2    ((SPI_TypeDef*)(SPI_BASE + 0x00000400U))
 #define GD_SPI3    ((SPI_TypeDef*)(SPI_BASE + 0x0000FC00U))
 #define GD_SPI4    ((SPI_TypeDef*)(SPI_BASE + 0x00011800U))
+#if defined(GD32H7)
+#define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00010000U))
+#else
 #define GD_SPI5    ((SPI_TypeDef*)(SPI_BASE + 0x00011C00U))
+#endif
 #undef SPI0
 #define SPI0       ((SPI_TypeDef*)GD_SPI0)
 #undef SPI1
@@ -305,6 +456,13 @@ extern uint32_t timerPrescaler(const TIM_TypeDef *tim);
 #define SPI4       ((SPI_TypeDef*)GD_SPI4)
 #undef SPI5
 #define SPI5       ((SPI_TypeDef*)GD_SPI5)
+
+#if defined(GD32H7)
+#define GD_OCTOSPI1    ((OCTOSPI_TypeDef*)OSPI_BASE)
+#undef OSPI0
+#define OSPI0          ((OCTOSPI_TypeDef*)GD_OCTOSPI1)
+#endif
+#endif
 
 // We also need to convert the pointer to the uint32_t
 // type required by the GD firmware library.

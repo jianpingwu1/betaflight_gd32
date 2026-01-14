@@ -26,7 +26,6 @@
 #include "build/atomic.h"
 
 #include "usbd_cdc_vcp.h"
-#include "gd32f4xx.h"
 #include "drivers/nvic.h"
 #include "drivers/time.h"
 

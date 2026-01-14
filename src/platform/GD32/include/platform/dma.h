@@ -24,7 +24,7 @@
 #include "platform.h"
 #include "drivers/resource.h"
 
-#if defined(GD32F4)
+#if defined(GD32F4) || defined(GD32H7)
 #define PLATFORM_TRAIT_DMA_STREAM_REQUIRED 1
 #endif
 

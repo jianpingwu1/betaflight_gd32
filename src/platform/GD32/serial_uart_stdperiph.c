@@ -77,6 +77,10 @@ void uartReconfigure(uartPort_t *uartPort)
         usart_halfduplex_disable((uint32_t)uartPort->USARTx);
     }
 
+#if defined(GD32H7)
+    usart_enable((uint32_t)uartPort->USARTx);
+#endif
+
     if (uartPort->port.mode & MODE_RX) {
 #ifdef USE_DMA
         if (uartPort->rxDMAResource) {
@@ -142,7 +146,9 @@ void uartReconfigure(uartPort_t *uartPort)
         usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TC);
     }
 
+#if defined(GD32F4)
     usart_enable((uint32_t)uartPort->USARTx);
+#endif
 }
 
 #ifdef USE_DMA

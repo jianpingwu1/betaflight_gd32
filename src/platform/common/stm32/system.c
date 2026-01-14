@@ -35,7 +35,7 @@
 
 #include "drivers/system.h"
 
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(GD32F4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(AT32F4) || defined(APM32F4) || defined(GD32F4) || defined(GD32H7)
 // See "RM CoreSight Architecture Specification"
 // B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
 // "E1.2.11  LAR, Lock Access Register"
@@ -75,7 +75,7 @@ void cycleCounterInit(void)
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 
 #if defined(DWT_LAR_UNLOCK_VALUE)
-#if defined(STM32H7) || defined(AT32F4) || defined(GD32F4)
+#if defined(STM32H7) || defined(AT32F4) || defined(GD32F4) || defined(GD32H7)
     ITM->LAR = DWT_LAR_UNLOCK_VALUE;
 #elif defined(STM32F7)
     DWT->LAR = DWT_LAR_UNLOCK_VALUE;
@@ -372,6 +372,8 @@ const mcuTypeInfo_t *getMcuTypeInfo(void)
         { .id = MCU_TYPE_APM32F407, .name = "APM32F407" },
 #elif defined(GD32F460)
         { .id = MCU_TYPE_GD32F460, .name = "GD32F460" },
+#elif defined(GD32H757)
+        { .id = MCU_TYPE_GD32H757, .name = "GD32H757" },
 #else
 #error MCU Type info not defined for STM (or clone)
 #endif

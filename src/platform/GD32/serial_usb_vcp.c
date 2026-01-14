@@ -214,16 +214,97 @@ void usbVcpInit(void)
     case COMPOSITE:
         usb_gpio_config();
         usb_rcu_config();
+
         usbd_desc_string_update();
+
+#if defined (GD32H7)
+
+// #ifdef USE_USBHS0
+// #ifdef USE_USB_FS
+//         usb_para_init(&USB_OTG_dev, USBHS0, USB_SPEED_FULL);
+// #endif
+// #ifdef USE_USB_HS
+//         usb_para_init(&USB_OTG_dev, USBHS0, USB_SPEED_HIGH);
+// #endif
+// #endif /* USE_USBHS0 */
+
+// #ifdef USE_USBHS1
+// #ifdef USE_USB_FS
+//         usb_para_init(&USB_OTG_dev, USBHS1, USB_SPEED_FULL);
+// #endif
+// #ifdef USE_USB_HS
+//         usb_para_init(&USB_OTG_dev, USBHS1, USB_SPEED_HIGH);
+// #endif
+// #endif /* USE_USBHS1 */
+
+//         usbd_init(&USB_OTG_dev, &bf_cdc_hid_desc, &bf_cdc_class);
+
+// #ifdef USE_USB_HS
+//     #ifndef USE_ULPI_PHY
+//         #ifdef USE_USBHS0
+//         pllusb_rcu_config(USBHS0);
+//         #elif defined USE_USBHS1
+//         pllusb_rcu_config(USBHS1);
+//         #else
+//         #endif
+//     #endif /* !USE_ULPI_PHY */
+// #endif /* USE_USB_HS */
+
+        usb_bsp_para_init();
+        usbd_init(&USB_OTG_dev, &bf_cdc_hid_desc, &bf_cdc_class);
+
+#else /* GD32H7 */
         usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_cdc_hid_desc, &bf_usbd_cdc_hid_cb);
+#endif /* GD32H7 */
+
         usb_intr_config();
         break;
 #endif
     default:
         usb_gpio_config();
         usb_rcu_config();
+
         usbd_desc_string_update();
+
+#if defined (GD32H7)
+
+// #ifdef USE_USBHS0
+// #ifdef USE_USB_FS
+//         usb_para_init(&USB_OTG_dev, USBHS0, USB_SPEED_FULL);
+// #endif
+// #ifdef USE_USB_HS
+//         usb_para_init(&USB_OTG_dev, USBHS0, USB_SPEED_HIGH);
+// #endif
+// #endif /* USE_USBHS0 */
+
+// #ifdef USE_USBHS1
+// #ifdef USE_USB_FS
+//         usb_para_init(&USB_OTG_dev, USBHS1, USB_SPEED_FULL);
+// #endif
+// #ifdef USE_USB_HS
+//         usb_para_init(&USB_OTG_dev, USBHS1, USB_SPEED_HIGH);
+// #endif
+// #endif /* USE_USBHS1 */
+//         usbd_init(&USB_OTG_dev, &bf_cdc_desc, &bf_cdc_class);
+
+// #ifdef USE_USB_HS
+//     #ifndef USE_ULPI_PHY
+//         #ifdef USE_USBHS0
+//         pllusb_rcu_config(USBHS0);
+//         #elif defined USE_USBHS1
+//         pllusb_rcu_config(USBHS1);
+//         #else
+//         #endif
+//     #endif /* !USE_ULPI_PHY */
+// #endif /* USE_USB_HS */
+
+        usb_bsp_para_init();
+        usbd_init(&USB_OTG_dev, &bf_cdc_desc, &bf_cdc_class);
+
+#else /* GD32H7 */
         usbd_init(&USB_OTG_dev, USB_CORE_ENUM_FS, &bf_cdc_desc, &bf_cdc_class);
+#endif /* GD32H7 */
+
         usb_intr_config();
         break;
     }

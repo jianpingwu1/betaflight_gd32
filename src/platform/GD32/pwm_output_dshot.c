@@ -40,6 +40,8 @@
 
 #if defined(GD32F4)
 #include "gd32f4xx.h"
+#elif defined(GD32H7)
+#include "gd32h7xx.h"
 #endif
 
 #include "drivers/pwm_output.h"
@@ -75,7 +77,7 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 )
 {
 #ifdef USE_DSHOT_TELEMETRY
-    timer_oc_parameter_struct* pOcInit = &motor->ocInitStruct;  
+    timer_oc_parameter_struct* pOcInit = &motor->ocInitStruct;
     DMA_InitTypeDef* pGenerDmaInit = &motor->dmaInitStruct;
 #endif
 
@@ -101,7 +103,7 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 
     timerOCModeConfig(timer, timerHardware->channel, timer_oc_modes[motor->index]);
     timer_channel_output_pulse_value_config((uint32_t)timer, timerHardware->channel, timer_oc_pulses[motor->index]);
-    timerOCPreloadConfig(timer, timerHardware->channel, TIMER_OC_SHADOW_ENABLE);  
+    timerOCPreloadConfig(timer, timerHardware->channel, TIMER_OC_SHADOW_ENABLE);
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
@@ -140,8 +142,8 @@ static void pwmDshotSetDirectionInput(
 
     timer_auto_reload_shadow_enable((uint32_t)timer);
     TIMER_CAR((uint32_t)timer) = 0xffff;
-  
-    timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);  
+
+    timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);
 
     if (useBurstDshot) {
         pGenerDmaInit->config.init_struct_m.direction = DMA_PERIPH_TO_MEMORY;
@@ -149,7 +151,7 @@ static void pwmDshotSetDirectionInput(
         pGenerDmaInit->config.init_struct_s.direction = DMA_PERIPH_TO_MEMORY;
     }
 
-    xDMA_Init(dmaRef, pGenerDmaInit); 
+    xDMA_Init(dmaRef, pGenerDmaInit);
 }
 #endif
 
@@ -193,7 +195,7 @@ void pwmCompleteDshotMotorUpdate(void)
 
 FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_FTF)) { 
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_FTF)) {
         motorDmaOutput_t * const motor = &dmaMotors[descriptor->userParam];
 #ifdef USE_DSHOT_TELEMETRY
         dshotDMAHandlerCycleCounters.irqAt = getCycleCounter();
@@ -218,8 +220,8 @@ FAST_CODE static void motor_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             dshotDMAHandlerCycleCounters.changeDirectionCompletedAt = getCycleCounter();
         }
 #endif
-        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF); 
-        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_HTF);         
+        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);
+        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_HTF);
     }
 }
 
@@ -229,39 +231,39 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #define OCINIT  motor->ocInitStruct
 #define DMAINIT motor->dmaInitStruct
 #else
-    timer_oc_parameter_struct ocInitStruct; 
+    timer_oc_parameter_struct ocInitStruct;
     DMA_InitTypeDef           dmaInitStruct;
 #define OCINIT  ocInitStruct
 #define DMAINIT dmaInitStruct
 #endif
 
     dmaResource_t *dmaRef = NULL;
-#if defined(GD32F4)
+// #if defined(GD32F4)
     uint32_t dmaChannel = 0;
-#endif
+// #endif
 
 #if defined(USE_DMA_SPEC)
     const dmaChannelSpec_t *dmaSpec = dmaGetChannelSpecByTimer(timerHardware);
 
     if (dmaSpec != NULL) {
         dmaRef = dmaSpec->ref;
-#if defined(GD32F4)
+// #if defined(GD32F4)
         dmaChannel = dmaSpec->channel;
-#endif
+// #endif
     }
 #else
     dmaRef = timerHardware->dmaRef;
-#if defined(GD32F4) 
+// #if defined(GD32F4)
     dmaChannel = timerHardware->dmaChannel;
-#endif
+// #endif
 #endif
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         dmaRef = timerHardware->dmaTimUPRef;
-#if defined(GD32F4)
+// #if defined(GD32F4)
         dmaChannel = timerHardware->dmaTimUPChannel;
-#endif
+// #endif
     }
 #endif
 
@@ -307,7 +309,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 
     const IO_t motorIO = IOGetByTag(timerHardware->tag);
 
-    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP;    
+    uint8_t pupMode = (output & TIMER_OUTPUT_INVERTED) ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP;
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -315,7 +317,11 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     }
 #endif
 
-    motor->iocfg = IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, pupMode);    
+#if defined(GD32H7)
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, pupMode);
+#else
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, pupMode);
+#endif
     IOConfigGPIOAF(motorIO, motor->iocfg, timerHardware->alternateFunction);
 
     if (configureTimer) {
@@ -345,7 +351,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     } else {
         OCINIT.outputstate = TIMER_CCX_ENABLE;
         OCINIT.ocidlestate = TIMER_OC_IDLE_STATE_HIGH;
-        OCINIT.ocpolarity  = (output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_POLARITY_LOW : TIMER_OC_POLARITY_HIGH;   
+        OCINIT.ocpolarity  = (output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_POLARITY_LOW : TIMER_OC_POLARITY_HIGH;
     }
 
     timer_oc_pulses[motor->index] = 0;
@@ -389,16 +395,25 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
         DMAINIT.data_mode = DMA_DATA_MODE_SINGLE;
     }
 
+#if defined(GD32F4)
     uint32_t temp_dma_periph;
     int temp_dma_channel;
 
     motor->dmaInitStruct.sub_periph = dmaChannel;
+#endif
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {
         motor->timer->dmaBurstBuffer = &dshotBurstDmaBuffer[timerIndex][0];
 
+#if defined(GD32F4)
         gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
+        DMAINIT.sub_periph = dmaChannel;
+#endif
+
+#if defined(GD32H7)
+        DMAINIT.config.init_struct_m.request = dmaChannel;
+#endif
 
         DMAINIT.config.init_struct_m.memory0_addr = (uint32_t)motor->timer->dmaBurstBuffer;
         DMAINIT.config.init_struct_m.direction = DMA_MEMORY_TO_PERIPH;
@@ -418,11 +433,18 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     {
         motor->dmaBuffer = &dshotDmaBuffer[motorIndex][0];
 
+#if defined(GD32F4)
         gd32_dma_chbase_parse((uint32_t)dmaRef, &temp_dma_periph, &temp_dma_channel);
+        DMAINIT.sub_periph = dmaChannel;
+#endif
+
+#if defined(GD32H7)
+        DMAINIT.config.init_struct_s.request = dmaChannel;
+#endif
 
         DMAINIT.config.init_struct_s.memory0_addr = (uint32_t)motor->dmaBuffer;
         DMAINIT.config.init_struct_s.direction = DMA_MEMORY_TO_PERIPH;
-        DMAINIT.config.init_struct_s.periph_addr = (uint32_t)timerChCCR(timerHardware);   
+        DMAINIT.config.init_struct_s.periph_addr = (uint32_t)timerChCCR(timerHardware);
         DMAINIT.config.init_struct_s.number = DSHOT_DMA_BUFFER_SIZE;
         DMAINIT.config.init_struct_s.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
         DMAINIT.config.init_struct_s.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
@@ -445,7 +467,9 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
     pwmDshotSetDirectionOutput(motor, &OCINIT, &DMAINIT);
 #endif
 
+#if defined(GD32F4)
     dma_channel_subperipheral_select(temp_dma_periph, temp_dma_channel, dmaChannel);
+#endif
 
 #ifdef USE_DSHOT_DMAR
     if (useBurstDshot) {

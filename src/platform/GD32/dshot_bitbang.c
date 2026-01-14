@@ -83,13 +83,23 @@ FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
      DEF_TIMER(TIMER7,  CH1, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH3, NONE,   0, 0),
- 
+
      DEF_TIMER(TIMER0,  CH0, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH0, NONE,   0, 2),
      DEF_TIMER(TIMER0,  CH1, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH3, NONE,   0, 0),
- 
+#elif defined(GD32H7)
+    // todo
+     DEF_TIMER(TIMER7,  CH0, NONE,   0, 1, 0),  
+     DEF_TIMER(TIMER7,  CH1, NONE,   0, 1, 0),
+     DEF_TIMER(TIMER7,  CH2, NONE,   0, 1, 0),
+     DEF_TIMER(TIMER7,  CH3, NONE,   0, 0, 0),
+
+     DEF_TIMER(TIMER0,  CH0, NONE,   0, 1, 0),
+     DEF_TIMER(TIMER0,  CH1, NONE,   0, 1, 0),
+     DEF_TIMER(TIMER0,  CH2, NONE,   0, 1, 0),
+     DEF_TIMER(TIMER0,  CH3, NONE,   0, 0, 0),
  #else
  #error MCU dependent code required
  #endif
@@ -746,9 +756,11 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].pinIndex = pinIndex;
         bbMotors[motorIndex].io = io;
         bbMotors[motorIndex].output = output;
-
+#if defined(GD32H7)
+        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, bbPuPdMode);
+#else
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, bbPuPdMode);
-
+#endif
         IOInit(io, OWNER_MOTOR, RESOURCE_INDEX(motorIndex));
         IOConfigGPIO(io, bbMotors[motorIndex].iocfg);
         if (output & TIMER_OUTPUT_INVERTED) {

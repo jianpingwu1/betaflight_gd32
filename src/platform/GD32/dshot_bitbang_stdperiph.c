@@ -84,7 +84,7 @@ void bbTimerChannelInit(bbPort_t *bbPort)
 
     timer_ocintpara.ocidlestate = TIMER_OC_IDLE_STATE_HIGH;
     timer_ocintpara.outputstate = TIMER_CCX_ENABLE;
-    timer_ocintpara.ocpolarity  = TIMER_OC_POLARITY_LOW;       
+    timer_ocintpara.ocpolarity  = TIMER_OC_POLARITY_LOW;
 
     timer_channel_output_pulse_value_config((uint32_t)(timhw->tim), timhw->channel, 10);
 
@@ -144,7 +144,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
     // Normal: Use CR (higher half)
     // Inverted: Use BOP (lower half)
 
-    WRITE_REG(GPIO_BOP((uint32_t)bbPort->gpio), bbPort->gpioIdleBSRR); 
+    WRITE_REG(GPIO_BOP((uint32_t)bbPort->gpio), bbPort->gpioIdleBSRR);
 
     // Set GPIO to output
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
@@ -216,7 +216,11 @@ void bbDMAPreconfigure(bbPort_t *bbPort, uint8_t direction)
 
     dma_multi_data_para_struct_init(dmainit);
 
+#if defined(GD32H7)
+    dmainit->request = bbPort->dmaChannel;
+#else
     gener_dmainit->sub_periph = bbPort->dmaChannel;
+#endif
 
     dmainit->circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dmainit->periph_inc = DMA_PERIPH_INCREASE_DISABLE;
