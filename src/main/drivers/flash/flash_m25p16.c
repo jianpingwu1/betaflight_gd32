@@ -142,6 +142,9 @@ struct {
     // XMC XM25QH256B
     // Datasheet: https://www.xmcwh.com/uploads/499/XM25QU256B.pdf
     { 0x206019, 166, 80, 8192, 16 },
+    // GD GD25Q128
+    // Datasheet: https://www.gigadevice.com/product/flash/spi-nor-flash/gd25q128e
+    { 0xC84018, 104, 80, 4096, 16 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };
