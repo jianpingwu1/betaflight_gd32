@@ -39,6 +39,13 @@
 
 #include "pg/bus_i2c.h"
 
+#ifndef I2C0_SCL_PIN
+#define I2C0_SCL_PIN NONE
+#endif
+#ifndef I2C0_SDA_PIN
+#define I2C0_SDA_PIN NONE
+#endif
+
 #ifndef I2C1_SCL_PIN
 #define I2C1_SCL_PIN NONE
 #endif
