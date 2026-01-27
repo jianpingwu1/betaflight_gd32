@@ -448,9 +448,9 @@ static uint8_t bf_cdc_acm_req(usb_dev *udev, usb_req *req)
 
     case SET_CONTROL_LINE_STATE:
         transc = &udev->dev.transc_out[0];
-        memcpy((uint8_t*)CmdBuff), (uint8_t*)&req->wValue, 2);
+        memcpy((uint8_t*)CmdBuff, (uint8_t*)&req->wValue, 2);
         if (ctrlLineStateCb) {
-            ctrlLineStateCb(ctrlLineStateCbContext, req->wValue));
+            ctrlLineStateCb(ctrlLineStateCbContext, req->wValue);
         }
         transc->remain_len = req->wLength;
         transc->xfer_buf = CmdBuff;
