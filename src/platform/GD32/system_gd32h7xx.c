@@ -119,6 +119,9 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_SPI0);
     rcu_periph_clock_enable(RCU_SYSCFG);
 
+    rcu_periph_clock_enable(RCU_OSPI0);
+    rcu_periph_clock_enable(RCU_OSPI1);
+    rcu_periph_clock_enable(RCU_EXMC);
 }
 
 void sys_clock_config(void)
