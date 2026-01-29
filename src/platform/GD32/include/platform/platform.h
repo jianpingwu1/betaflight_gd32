@@ -379,8 +379,8 @@ extern uint8_t _dmaram_end__;
 #if defined(ITCM_RAM_OPTIMISATION) && !defined(DEBUG)
 #define FAST_CODE                   __attribute__((section(".tcm_code"))) __attribute__((optimize(ITCM_RAM_OPTIMISATION)))
 #else
-// #define FAST_CODE                   __attribute__((section(".tcm_code")))
-#define FAST_CODE
+#define FAST_CODE                   __attribute__((section(".tcm_code")))
+// #define FAST_CODE
 #endif
 // If a particular target is short of ITCM RAM, defining FAST_CODE_PREF in the target.h file will
 // cause functions decorated FAST_CODE_PREF to *not* go into ITCM RAM but if FAST_CODE_PREF is not

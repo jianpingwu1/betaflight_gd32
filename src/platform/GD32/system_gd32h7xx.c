@@ -67,12 +67,12 @@ void checkForBootLoaderRequest(void)
         return;
     }
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-    
+
     // rcu_periph_clock_enable(RCU_SYSCFG);
     // syscfg_bootmode_config(SYSCFG_BOOTMODE_BOOTLOADER);
 
     extern isrVector_t system_isr_vector_table_base;
-    
+
     SCB->VTOR = (uint32_t)&system_isr_vector_table_base;
     __DSB();
     __DSB();
@@ -91,33 +91,33 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_DMAMUX);
 
     /* enable APB1 peripherals clock */
-    rcu_periph_clock_enable(RCU_TIMER1);
-    rcu_periph_clock_enable(RCU_TIMER2);
-    rcu_periph_clock_enable(RCU_TIMER3);
-    rcu_periph_clock_enable(RCU_TIMER4);
-    rcu_periph_clock_enable(RCU_TIMER5);
-    rcu_periph_clock_enable(RCU_TIMER6);
-    rcu_periph_clock_enable(RCU_SPI1);
-    rcu_periph_clock_enable(RCU_SPI2);
-    rcu_periph_clock_enable(RCU_USART1);
-    rcu_periph_clock_enable(RCU_USART2);
-    rcu_periph_clock_enable(RCU_UART3);
-    rcu_periph_clock_enable(RCU_UART4);
-    rcu_periph_clock_enable(RCU_I2C0);
-    rcu_periph_clock_enable(RCU_I2C1);
-    rcu_periph_clock_enable(RCU_I2C2);
-    rcu_periph_clock_enable(RCU_PMU);
-    rcu_periph_clock_enable(RCU_DAC);
+    // rcu_periph_clock_enable(RCU_TIMER1);
+    // rcu_periph_clock_enable(RCU_TIMER2);
+    // rcu_periph_clock_enable(RCU_TIMER3);
+    // rcu_periph_clock_enable(RCU_TIMER4);
+    // rcu_periph_clock_enable(RCU_TIMER5);
+    // rcu_periph_clock_enable(RCU_TIMER6);
+    // rcu_periph_clock_enable(RCU_SPI1);
+    // rcu_periph_clock_enable(RCU_SPI2);
+    // rcu_periph_clock_enable(RCU_USART1);
+    // rcu_periph_clock_enable(RCU_USART2);
+    // rcu_periph_clock_enable(RCU_UART3);
+    // rcu_periph_clock_enable(RCU_UART4);
+    // rcu_periph_clock_enable(RCU_I2C0);
+    // rcu_periph_clock_enable(RCU_I2C1);
+    // rcu_periph_clock_enable(RCU_I2C2);
+    // rcu_periph_clock_enable(RCU_PMU);
+    // rcu_periph_clock_enable(RCU_DAC);
 
     rcu_periph_clock_enable(RCU_TIMER0);
     rcu_periph_clock_enable(RCU_TIMER7);
-    rcu_periph_clock_enable(RCU_USART0);
-    rcu_periph_clock_enable(RCU_USART5);
-    rcu_periph_clock_enable(RCU_ADC0);
-    rcu_periph_clock_enable(RCU_ADC1);
-    rcu_periph_clock_enable(RCU_ADC2);
-    rcu_periph_clock_enable(RCU_SPI0);
-    rcu_periph_clock_enable(RCU_SYSCFG);
+    // rcu_periph_clock_enable(RCU_USART0);
+    // rcu_periph_clock_enable(RCU_USART5);
+    // rcu_periph_clock_enable(RCU_ADC0);
+    // rcu_periph_clock_enable(RCU_ADC1);
+    // rcu_periph_clock_enable(RCU_ADC2);
+    // rcu_periph_clock_enable(RCU_SPI0);
+    // rcu_periph_clock_enable(RCU_SYSCFG);
 
     rcu_periph_clock_enable(RCU_OSPI0);
     rcu_periph_clock_enable(RCU_OSPI1);
