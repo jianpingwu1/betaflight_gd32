@@ -270,7 +270,13 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
 
     if (txData) {
 #ifdef __DCACHE_PRESENT
+#ifdef GD32H7
         if ((txData < &_dmaram_start__) || (txData >= &_dmaram_end__)) {
+#else
+        // No need to flush DTCM memory
+        if (!IS_DTCM(txData)) {
+#endif
+
             // Flush the D cache to ensure the data to be written is in main memory
             SCB_CleanDCache_by_Addr(
                 (uint32_t *)((uint32_t)txData & ~CACHE_LINE_MASK),
@@ -307,7 +313,12 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
              */
 #ifdef __DCACHE_PRESENT
             // No need to flush/invalidate DTCM memory
+#ifdef GD32H7
             if ((rxData < &_dmaram_start__) || (rxData >= &_dmaram_end__)) {
+#else
+            // No need to flush DTCM memory
+            if (!IS_DTCM(rxData)) {
+#endif
                 SCB_CleanInvalidateDCache_by_Addr(
                         (uint32_t *)((uint32_t)rxData & ~CACHE_LINE_MASK),
                         (((uint32_t)rxData & CACHE_LINE_MASK) + len - 1 + CACHE_LINE_SIZE) & ~CACHE_LINE_MASK);

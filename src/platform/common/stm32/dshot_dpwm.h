@@ -66,6 +66,8 @@ uint32_t getDshotHz(motorProtocolTypes_e pwmProtocolType);
 #define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM_W
 #elif defined(STM32F7)
 #define DSHOT_DMA_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT
+#elif defined(GD32H7)
+#define DSHOT_DMA_BUFFER_ATTRIBUTE DMA_RAM
 #else
 #define DSHOT_DMA_BUFFER_ATTRIBUTE /* Empty */
 #endif

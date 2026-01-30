@@ -46,7 +46,11 @@ static TIM_TypeDef *timer = NULL;
 uint8_t alternateFunction;
 static dmaResource_t *dmaRef = NULL;
 
+#if defined(GD32H7)
+DMA_RAM transponder_t transponder;
+#else
 transponder_t transponder;
+#endif
 
 static void TRANSPONDER_DMA_IRQHandler(dmaChannelDescriptor_t* descriptor)
 {
@@ -166,10 +170,10 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     dma_init_struct.config.init_struct_s.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
 
 #if defined(GD32F4) || defined(GD32H7)
-    dma_init_struct.config.init_struct_s.periph_memory_width = DMA_PERIPH_WIDTH_32BIT; 
+    dma_init_struct.config.init_struct_s.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
 #endif
 
-    dma_init_struct.config.init_struct_s.circular_mode = DMA_CIRCULAR_MODE_DISABLE; 
+    dma_init_struct.config.init_struct_s.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dma_init_struct.config.init_struct_s.priority = DMA_PRIORITY_HIGH;
 
     // gd32_dma_init((uint32_t)dmaRef, &dma_init_struct);
