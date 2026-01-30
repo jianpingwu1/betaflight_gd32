@@ -85,10 +85,10 @@ void checkForBootLoaderRequest(void)
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
     /* enable AHB1 peripherals clock */
-    rcu_periph_clock_enable(RCU_BKPSRAM);
-    rcu_periph_clock_enable(RCU_DMA0);
-    rcu_periph_clock_enable(RCU_DMA1);
-    rcu_periph_clock_enable(RCU_DMAMUX);
+    // rcu_periph_clock_enable(RCU_BKPSRAM);
+    // rcu_periph_clock_enable(RCU_DMA0);
+    // rcu_periph_clock_enable(RCU_DMA1);
+    // rcu_periph_clock_enable(RCU_DMAMUX);
 
     /* enable APB1 peripherals clock */
     // rcu_periph_clock_enable(RCU_TIMER1);
@@ -109,8 +109,8 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     // rcu_periph_clock_enable(RCU_PMU);
     // rcu_periph_clock_enable(RCU_DAC);
 
-    rcu_periph_clock_enable(RCU_TIMER0);
-    rcu_periph_clock_enable(RCU_TIMER7);
+    // rcu_periph_clock_enable(RCU_TIMER0);
+    // rcu_periph_clock_enable(RCU_TIMER7);
     // rcu_periph_clock_enable(RCU_USART0);
     // rcu_periph_clock_enable(RCU_USART5);
     // rcu_periph_clock_enable(RCU_ADC0);
@@ -186,6 +186,11 @@ void systemInit(void)
 
     // cache RCU RSTSCK register value to use it in isMPUSoftReset() and others
     cachedRccCsrValue = RCU_RSTSCK;
+
+    // // Enable debug interface in low-power modes
+    // // This prevents "Failed to power up DAP" errors with J-Link/ST-Link
+    // // Must be set after every reset to maintain debugger connection
+    // DBG_CTL0 |= (DBG_CTL0_SLP_HOLD | DBG_CTL0_DSLP_HOLD | DBG_CTL0_STB_HOLD);
 
 //     // Although VTOR is already loaded with a possible vector table in RAM,
 //     // removing the call to NVIC_SetVectorTable causes USB not to become active,

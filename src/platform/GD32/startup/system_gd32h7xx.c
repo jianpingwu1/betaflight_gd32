@@ -387,6 +387,11 @@ void SystemInit(void)
     pmu_smps_ldo_supply_config(SEL_PMU_SMPS_MODE);
 #endif
 
+    // // Enable debug interface in low-power modes
+    // // This prevents "Failed to power up DAP" errors with J-Link/ST-Link
+    // // Must be set after every reset to maintain debugger connection
+    // DBG_CTL0 |= (DBG_CTL0_SLP_HOLD | DBG_CTL0_DSLP_HOLD | DBG_CTL0_STB_HOLD);
+
     /* configure system clock */
     system_clock_config();
 
