@@ -85,10 +85,10 @@ void checkForBootLoaderRequest(void)
 void enableGPIOPowerUsageAndNoiseReductions(void)
 {
     /* enable AHB1 peripherals clock */
-    // rcu_periph_clock_enable(RCU_BKPSRAM);
-    // rcu_periph_clock_enable(RCU_DMA0);
-    // rcu_periph_clock_enable(RCU_DMA1);
-    // rcu_periph_clock_enable(RCU_DMAMUX);
+    rcu_periph_clock_enable(RCU_BKPSRAM);
+    rcu_periph_clock_enable(RCU_DMA0);
+    rcu_periph_clock_enable(RCU_DMA1);
+    rcu_periph_clock_enable(RCU_DMAMUX);
 
     /* enable APB1 peripherals clock */
     // rcu_periph_clock_enable(RCU_TIMER1);

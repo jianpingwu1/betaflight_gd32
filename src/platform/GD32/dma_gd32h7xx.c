@@ -80,6 +80,7 @@ void dmaEnable(dmaIdentifier_e identifier)
 {
     (void) identifier;
     const int index = DMA_IDENTIFIER_TO_INDEX(identifier);
+    RCC_ClockCmd(RCC_AHB1(DMAMUX), ENABLE);
     RCC_ClockCmd(DMA_RCU(dmaDescriptors[index].dma), ENABLE);
 }
 
@@ -285,7 +286,7 @@ void gd32_dma_memory_addr_config(uint32_t dma_chan_base, uint32_t address, uint8
     int channel;
 
     gd32_dma_chbase_parse(dma_chan_base, &dma_periph, &channel);
- 
+
     dma_memory_address_config(dma_periph, channel, memory_flag, address);
 }
 
