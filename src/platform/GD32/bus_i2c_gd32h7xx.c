@@ -112,13 +112,15 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
 
 i2cDevice_t i2cDevice[I2CDEV_COUNT];
 
-// State used by event handler ISR
+/* I2C transfer context - tracks transfer progress in interrupt handlers */
 typedef struct {
-    uint8_t subaddress_sent;    // flag to indicate if subaddess sent
-    uint8_t final_stop;         // flag to indicate final bus condition
-    int8_t index;               // index is signed -1 == send the subaddress
-} i2cEvState_t;
-static i2cEvState_t i2c_ev_state[I2CDEV_COUNT];
+    volatile int8_t index;              // Current transfer index, -1 means need to send register address first
+    volatile uint8_t subaddress_sent;   // Read operation: whether register address has been sent
+    volatile uint8_t final_stop;        // Whether final STOP is needed
+    volatile uint8_t phase;             // Transfer phase: 0=not started, 1=Phase1(send reg), 2=Phase2(recv/send data)
+} i2cContext_t;
+
+static volatile i2cContext_t i2cContext[I2CDEV_COUNT];
 
 static volatile uint16_t i2cErrorCount = 0;
 
@@ -162,27 +164,47 @@ void I2C3_EV_IRQHandler(void)
     i2c_ev_handler(I2CDEV_3);
 }
 
- static bool i2cHandleHardwareFailure(i2cDevice_e device)
- {
-     i2cErrorCount++;
-     // reinit peripheral + clock out garbage
-     i2cInit(device);
-     return false;
- }
+/* Disable all I2C interrupts */
+static inline void i2cDisableAllInterrupts(uint32_t I2Cx)
+{
+    I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | 
+                        I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
+}
 
+/* Clear all status flags (write 1 to clear) */
+static inline void i2cClearAllFlags(uint32_t I2Cx)
+{
+    I2C_STATC(I2Cx) = I2C_STATC_ADDSENDC | I2C_STATC_NACKC | I2C_STATC_STPDETC |
+                      I2C_STATC_BERRC | I2C_STATC_LOSTARBC | I2C_STATC_OUERRC |
+                      I2C_STATC_PECERRC | I2C_STATC_TIMEOUTC | I2C_STATC_SMBALTC;
+}
+
+/* Hardware failure handling: reinitialize I2C peripheral */
+static bool i2cHandleHardwareFailure(i2cDevice_e device)
+{
+    i2cErrorCount++;
+    i2cInit(device);
+    return false;
+}
+
+/*
+ * I2C write operation
+ * Flow: START -> address -> register(optional) -> data -> AUTOEND auto STOP -> STPDET
+ */
 bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data)
 {
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
-    uint32_t I2Cx = (uint32_t )(i2cDevice[device].reg);
+    uint32_t I2Cx = (uint32_t)(i2cDevice[device].reg);
 
     if (!I2Cx) {
         return false;
     }
 
     i2cState_t *state = &(i2cDevice[device].state);
+    volatile i2cContext_t *ctx = &i2cContext[device];
     if (state->busy) {
         return false;
     }
@@ -199,49 +221,55 @@ bool i2cWriteBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len
     state->busy = 1;
     state->error = false;
 
-    i2cEvState_t *ev_state = &i2c_ev_state[device];
-    ev_state->subaddress_sent = 0;
-    ev_state->final_stop = 0;
-    ev_state->index = (reg_ != 0xFF) ? -1 : 0;
-
-    // Ensure bus is free (check I2CBSY)
+    // Wait for bus to be idle
     while (I2C_STAT(I2Cx) & I2C_STAT_I2CBSY) {
         if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+            state->busy = 0;
             return i2cHandleHardwareFailure(device);
         }
     }
 
-    // Wait for the STOP bit to be cleared by hardware from the previous transaction.
+    // Wait for previous STOP to finish sending
     while (I2C_CTL1(I2Cx) & I2C_CTL1_STOP) {
         if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+            state->busy = 0;
             return i2cHandleHardwareFailure(device);
         }
     }
 
-    // Disable all interrupts first to ensure clean state
-    I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
+    // Disable interrupts and clear residual flags
+    i2cDisableAllInterrupts(I2Cx);
+    i2cClearAllFlags(I2Cx);
 
-    // Flush TDATA before starting
+    // Initialize transfer context
+    ctx->subaddress_sent = 0;
+    ctx->index = (reg_ != 0xFF) ? -1 : 0;  // -1: need to send reg first; 0: send data directly
+    ctx->final_stop = 1;                   // Write operation requires STOP at end
+    ctx->phase = 1;                        // Write operation has only one phase
+
+    // Clear transmit buffer
     I2C_STAT(I2Cx) |= I2C_STAT_TBE;
 
-    // Configure Transfer
-    I2C_CTL1(I2Cx) &= ~(I2C_CTL1_BYTENUM | I2C_CTL1_SADDRESS | I2C_CTL1_TRDIR | I2C_CTL1_RELOAD | I2C_CTL1_AUTOEND);
-    
+    // Calculate total transfer bytes (including register address)
     uint32_t total_bytes = state->bytes;
-    if (state->reg != 0xFF) total_bytes++; // Add subaddress byte
+    if (state->reg != 0xFF) {
+        total_bytes++;  // Add 1 byte for register address
+    }
 
-    uint32_t ctl1 = I2C_CTL1(I2Cx);
-    ctl1 |= (total_bytes << 16); // BYTENUM
-    ctl1 |= (state->addr & I2C_CTL1_SADDRESS); // SADDRESS
-    ctl1 &= ~I2C_CTL1_TRDIR; // Master Transmit
-    I2C_CTL1(I2Cx) = ctl1;
+    // Configure CTL1 register atomically (avoid read-modify-write race)
+    uint32_t ctl1_new = 0;
+    ctl1_new |= (state->addr & I2C_CTL1_SADDRESS);  // Slave address
+    ctl1_new |= (total_bytes << 16);                // BYTENUM: bytes to transfer
+    ctl1_new |= I2C_CTL1_AUTOEND;                   // AUTOEND=1: hardware auto sends STOP
+    ctl1_new |= I2C_CTL1_START;                     // START
+    
+    __DSB();                                        
+    I2C_CTL1(I2Cx) = ctl1_new;                      
+    __DSB();
+    __ISB();
 
-    // Enable Interrupts
-    // H7: TIE (Tx), TCIE (Transfer Complete), NACKIE, STOPDETIE, ERRIE
-    I2C_CTL0(I2Cx) |= (I2C_CTL0_TIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
-
-    // Send Start
-    I2C_CTL1(I2Cx) |= I2C_CTL1_START;
+    // Enable interrupts: transmit buffer empty + NACK + STOP detect + error
+    I2C_CTL0(I2Cx) |= (I2C_CTL0_TIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
 
     return true;
 }
@@ -256,6 +284,7 @@ bool i2cBusy(i2cDevice_e device, bool *error)
     return state->busy;
 }
 
+/* Wait for I2C transfer to complete */
 static bool i2cWait(i2cDevice_e device)
 {
     i2cState_t *state = &(i2cDevice[device].state);
@@ -275,25 +304,32 @@ bool i2cWrite(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return i2cWriteBuffer(device, addr_, reg_, 1, &data) && i2cWait(device);
 }
 
+/*
+ * I2C read operation
+ * With register: Phase1(send reg,AUTOEND=0) -> TC -> Phase2(ReSTART receive,AUTOEND=1) -> STPDET
+ * Without register: direct receive(AUTOEND=1) -> STPDET
+ */
 bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
 {
-
     if (device == I2CINVALID || device >= I2CDEV_COUNT) {
         return false;
     }
 
-    uint32_t I2Cx = (uint32_t )(i2cDevice[device].reg);
+    uint32_t I2Cx = (uint32_t)(i2cDevice[device].reg);
     if (!I2Cx) {
         return false;
     }
 
     i2cState_t *state = &i2cDevice[device].state;
+    volatile i2cContext_t *ctx = &i2cContext[device];
+    
     if (state->busy) {
         return false;
     }
 
     timeUs_t timeoutStartUs = microsISR();
 
+    // Setup transfer parameters
     state->addr = addr_ << 1;
     state->reg = reg_;
     state->writing = 0;
@@ -304,63 +340,65 @@ bool i2cReadBuffer(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len,
     state->busy = 1;
     state->error = false;
 
-    i2cEvState_t *ev_state = &i2c_ev_state[device];
-    ev_state->subaddress_sent = 0;
-    // ev_state->final_stop = 0;
-    ev_state->index = 0;
-
-    I2C_STATC(I2Cx) |= (I2C_STATC_ADDSENDC | I2C_STATC_BERRC | I2C_STATC_LOSTARBC | I2C_STATC_OUERRC | \
-    I2C_STATC_STPDETC | I2C_STATC_NACKC);
-
-    // Ensure bus is free
+    // Wait for bus to be idle
     while (I2C_STAT(I2Cx) & I2C_STAT_I2CBSY) {
         if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+            state->busy = 0;
             return i2cHandleHardwareFailure(device);
         }
     }
 
-    // Wait for the STOP bit to be cleared by hardware from the previous transaction.
+    // Wait for previous STOP to finish sending
     while (I2C_CTL1(I2Cx) & I2C_CTL1_STOP) {
         if (cmpTimeUs(microsISR(), timeoutStartUs) >= I2C_TIMEOUT_US) {
+            state->busy = 0;
             return i2cHandleHardwareFailure(device);
         }
     }
     
-    // Disable all interrupts first
-    I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
+    // Disable interrupts and clear flags
+    i2cDisableAllInterrupts(I2Cx);
+    i2cClearAllFlags(I2Cx);
 
-    // Flush TDATA before starting
+    // Initialize transfer context - ensure all states are clean
+    ctx->index = 0;
+    ctx->subaddress_sent = (reg_ == 0xFF) ? 1 : 0;
+    ctx->final_stop = 1;  // Read operation requires STOP at end
+    ctx->phase = (reg_ == 0xFF) ? 2 : 1;  // Phase1=send reg, Phase2=receive
+
+    // Clear transmit buffer
     I2C_STAT(I2Cx) |= I2C_STAT_TBE;
 
-    // H7 Logic: 
-    // If reg != 0xFF, we first Write the Register Address (1 byte), then Restart and Read.
-    // If reg == 0xFF, we just Read.
+    // Configure CTL1 register atomically
+    uint32_t ctl1_new = 0;
+    ctl1_new |= (state->addr & I2C_CTL1_SADDRESS);  // Slave address
 
-    uint32_t ctl1 = I2C_CTL1(I2Cx);
-    ctl1 &= ~(I2C_CTL1_BYTENUM | I2C_CTL1_SADDRESS | I2C_CTL1_TRDIR | I2C_CTL1_RELOAD | I2C_CTL1_AUTOEND);
-    ctl1 |= (state->addr & I2C_CTL1_SADDRESS);
-
-    if (state->reading && (ev_state->subaddress_sent || 0xFF == state->reg)) {              // we have sent the subaddr
-        // Direct Read
-        ctl1 |= ((uint32_t)len << 16); // BYTENUM = len
-        ctl1 |= I2C_CTL1_TRDIR; // Master Receive
-        ev_state->subaddress_sent = 1; // Skip subaddress phase
+    if (reg_ == 0xFF) {
+        // Direct read mode: START -> receive data -> AUTOEND auto NACK+STOP
+        ctl1_new |= I2C_CTL1_TRDIR;             // TRDIR=1: master receive
+        ctl1_new |= ((uint32_t)len << 16);      // BYTENUM
+        ctl1_new |= I2C_CTL1_AUTOEND;           // Hardware auto NACK+STOP
+        ctl1_new |= I2C_CTL1_START;             // START
         
-        I2C_CTL1(I2Cx) = ctl1;
+        __DSB();                                
+        I2C_CTL1(I2Cx) = ctl1_new;              
+        __DSB();
+        __ISB();
         
-        // Enable Interrupts for RX (RBNEIE)
-        I2C_CTL1(I2Cx) |= I2C_CTL1_START;
-        I2C_CTL0(I2Cx) |= (I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
-    } else {                                                                                
-        // Phase 1: Write Subaddress
-        ctl1 |= ((uint32_t)(0x01) << 16); // BYTENUM = 1
-        ctl1 &= ~I2C_CTL1_TRDIR; // Master Transmit
-        if (state->reg != 0xFF)                                                            
-                ev_state->index = -1;
-        I2C_CTL1(I2Cx) = ctl1;
+        // Enable: receive buffer not empty + NACK + STOP detect + error
+        I2C_CTL0(I2Cx) |= (I2C_CTL0_RBNEIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
+    } else {
+        // Two-phase read: Phase1 send register address first
+        ctl1_new |= ((uint32_t)1 << 16);        // BYTENUM=1 (send reg only)
+        // TRDIR=0: master transmit; AUTOEND=0: send ReSTART after TC
+        ctl1_new |= I2C_CTL1_START;             // START
         
-        // Enable Interrupts for TX (TIE)
-        I2C_CTL1(I2Cx) |= I2C_CTL1_START;
+        __DSB();                                
+        I2C_CTL1(I2Cx) = ctl1_new;             
+        __DSB();
+        __ISB();
+        
+        // Enable: transmit buffer empty + transfer complete + NACK + STOP detect + error
         I2C_CTL0(I2Cx) |= (I2C_CTL0_TIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
     }
    
@@ -372,124 +410,208 @@ bool i2cRead(i2cDevice_e device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8
     return i2cReadBuffer(device, addr_, reg_, len, buf) && i2cWait(device);
 }
 
+/*
+ * I2C error interrupt handler
+ * Handles: BERR(bus error), LOSTARB(arbitration lost), OUERR(over/underrun), TIMEOUT
+ * Error recovery: disable interrupts -> clear flags -> send STOP(except arbitration loss) -> release bus
+ */
 static void i2c_er_handler(i2cDevice_e device)
 {
-    uint32_t I2Cx = (uint32_t )(i2cDevice[device].hardware->reg);
-
+    uint32_t I2Cx = (uint32_t)(i2cDevice[device].hardware->reg);
     i2cState_t *state = &i2cDevice[device].state;
+    volatile i2cContext_t *ctx = &i2cContext[device];
     
-    // Read the I2C status register
-    volatile uint32_t status = I2C_STAT(I2Cx);
+    // Read status register
+    uint32_t status = I2C_STAT(I2Cx);
+    uint32_t ctl1 = I2C_CTL1(I2Cx);
 
-    // Map F4 errors to H7 errors
-    // F4: BERR, LOSTARB, AERR (Ack Error), OUERR
-    // H7: BERR, LOSTARB, NACK, OUERR, PECERR, TIMEOUT
-    
-    if (status & (I2C_STAT_BERR | I2C_STAT_LOSTARB | I2C_STAT_NACK | I2C_STAT_OUERR | I2C_STAT_PECERR | I2C_STAT_TIMEOUT)) {
+    // Check error flags
+    if (status & (I2C_STAT_BERR | I2C_STAT_LOSTARB | I2C_STAT_OUERR | I2C_STAT_PECERR | I2C_STAT_TIMEOUT)) {
         state->error = true;
         
-        // Clear errors
+        // Disable interrupts first to prevent interrupt nesting
+        i2cDisableAllInterrupts(I2Cx);
+        
+        // Clear corresponding error flags
         uint32_t clearMask = 0;
-        if (status & I2C_STAT_BERR) clearMask |= I2C_STATC_BERRC;
+        if (status & I2C_STAT_BERR)    clearMask |= I2C_STATC_BERRC;
         if (status & I2C_STAT_LOSTARB) clearMask |= I2C_STATC_LOSTARBC;
-        if (status & I2C_STAT_NACK) clearMask |= I2C_STATC_NACKC;
-        if (status & I2C_STAT_OUERR) clearMask |= I2C_STATC_OUERRC;
-        if (status & I2C_STAT_PECERR) clearMask |= I2C_STATC_PECERRC;
+        if (status & I2C_STAT_OUERR)   clearMask |= I2C_STATC_OUERRC;
+        if (status & I2C_STAT_PECERR)  clearMask |= I2C_STATC_PECERRC;
         if (status & I2C_STAT_TIMEOUT) clearMask |= I2C_STATC_TIMEOUTC;
         
         I2C_STATC(I2Cx) = clearMask;
 
-        // Stop and Disable Interrupts
-        I2C_CTL1(I2Cx) |= I2C_CTL1_STOP;
-        I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
+        // No need to send STOP on arbitration loss
+        if (!(status & I2C_STAT_LOSTARB)) {
+            // If currently sending START, need to wait for completion before sending STOP
+            if (ctl1 & I2C_CTL1_START) {
+                uint32_t timeout = 10000;
+                while ((I2C_CTL1(I2Cx) & I2C_CTL1_START) && --timeout) {
+                    // Wait for START to complete
+                }
+                I2C_CTL1(I2Cx) |= I2C_CTL1_STOP;    // Send STOP to terminate bus transaction
+                timeout = 10000;
+                while ((I2C_CTL1(I2Cx) & I2C_CTL1_STOP) && --timeout) {
+                    // Wait for STOP to complete
+                }
+                if (timeout == 0) {
+                    i2c_deinit(I2Cx);               // Reinitialize hardware on timeout
+                }
+            } else {
+                // Send STOP to release bus
+                if (!(I2C_CTL1(I2Cx) & I2C_CTL1_STOP)) {
+                    I2C_CTL1(I2Cx) |= I2C_CTL1_STOP;
+                }
+            }
+        }
         
+        // Check if STPDET is already set
+        status = I2C_STAT(I2Cx);
+        if (status & I2C_STAT_STPDET) {
+            I2C_STATC(I2Cx) = I2C_STATC_STPDETC;
+        }
+        
+        // Clean up state
+        ctx->phase = 0;
         state->busy = 0;
     }
 }
 
+/*
+ * I2C event interrupt handler - state machine implementation
+ * 
+ * Event priority: STPDET > NACK > TC > RBNE > TI
+ * 
+ * STPDET: STOP detected, transfer end
+ * NACK:   Slave not acknowledged, transfer failed
+ * TC:     Transfer complete, used for mid-phase switching in two-phase read
+ * RBNE:   Receive buffer not empty, read data
+ * TI:     Transmit buffer empty, send data or register address
+ */
 void i2c_ev_handler(i2cDevice_e device)
 {
     uint32_t I2Cx = (uint32_t)(i2cDevice[device].hardware->reg);
-
-    i2cEvState_t *ev_state = &i2c_ev_state[device];
     i2cState_t *state = &i2cDevice[device].state;
+    volatile i2cContext_t *ctx = &i2cContext[device];
 
+    // Read current status
     uint32_t status = I2C_STAT(I2Cx);
     uint32_t ctl0 = I2C_CTL0(I2Cx);
 
-    // 1. NACK Received (Error) - Highest Priority
-    if ((ctl0 & I2C_CTL0_NACKIE) && (status & I2C_STAT_NACK)) {
-        I2C_STATC(I2Cx) |= I2C_STATC_NACKC;
-        state->error = true;
-
-        // state->busy = 0;
-        I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_ERRIE);
-        // IP automatically sends STOP on NACK, so we wait for STPDET.
-        // Do not disable interrupts here, let STPDET handle cleanup.
-    }
-    // 2. Stop Detection (STPDET) - End of Transaction
-    else if ((ctl0 & I2C_CTL0_STPDETIE) && (status & I2C_STAT_STPDET)) {
-        I2C_STATC(I2Cx) |= I2C_STATC_STPDETC;
-
-        // Disable ALL interrupts
-        I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
+    // 1. STPDET: STOP detected, transfer end
+    if ((ctl0 & I2C_CTL0_STPDETIE) && (status & I2C_STAT_STPDET)) {
+        I2C_STATC(I2Cx) = I2C_STATC_STPDETC;  // Clear STPDET flag
         
+        // Also clear possible NACK flag
+        if (status & I2C_STAT_NACK) {
+            I2C_STATC(I2Cx) = I2C_STATC_NACKC;
+            state->error = true;
+        }
+        
+        // Transfer complete, disable all interrupts
+        i2cDisableAllInterrupts(I2Cx);
+        ctx->phase = 0;  // Reset phase
         state->busy = 0;
+        return;
     }
-    // 3. Receive Buffer Not Empty (RBNE) - Read Data
-    // Must be handled before TC to ensure we read the last byte.
-    else if ((ctl0 & I2C_CTL0_RBNEIE) && (status & I2C_STAT_RBNE)) {
-        if (state->reading && ev_state->index < state->bytes) {
-            state->read_p[ev_state->index++] = (uint8_t)I2C_RDATA(I2Cx);
-        } else {
-            // Flush garbage
-            volatile uint8_t dummy = (uint8_t)I2C_RDATA(I2Cx);
-            (void)dummy;
+    
+    // 2. NACK: slave not acknowledged
+    if ((ctl0 & I2C_CTL0_NACKIE) && (status & I2C_STAT_NACK)) {
+        I2C_STATC(I2Cx) = I2C_STATC_NACKC;
+        state->error = true;
+        
+        // Disable all buffer interrupts
+        I2C_CTL0(I2Cx) &= ~(I2C_CTL0_TIE | I2C_CTL0_RBNEIE | I2C_CTL0_TCIE | I2C_CTL0_NACKIE | I2C_CTL0_ERRIE);
+        
+        // Check if STPDET is already set
+        status = I2C_STAT(I2Cx);
+        if (status & I2C_STAT_STPDET) {
+            I2C_STATC(I2Cx) = I2C_STATC_STPDETC;
+            i2cDisableAllInterrupts(I2Cx);
+            ctx->phase = 0;
+            state->busy = 0;
         }
+        return;
     }
-    // 4. Transfer Complete (TC) - End of Block (Restart or Stop)
-    else if ((ctl0 & I2C_CTL0_TCIE) && (status & I2C_STAT_TC)) {
-        // Check if we are in Phase 1 of Read (Write Reg Address done)
-        if (state->reading && !ev_state->subaddress_sent) {
-            // Phase 1 (Write Reg) complete. Start Phase 2 (Read Data).
-            ev_state->subaddress_sent = 1;
-            ev_state->index = 0;
-
-            // CRITICAL: Switch Interrupts - Disable TIE, Enable RBNEIE
-            // This prevents TI from firing again and causing the "re-send address" bug.
-            uint32_t new_ctl0 = ctl0 & ~I2C_CTL0_TIE;
-            new_ctl0 |= I2C_CTL0_RBNEIE;
-            I2C_CTL0(I2Cx) = new_ctl0;
-
-            // Reconfigure for Read and Restart
-            uint32_t ctl1 = I2C_CTL1(I2Cx);
-            ctl1 &= ~(I2C_CTL1_BYTENUM | I2C_CTL1_TRDIR); // Clear Len and Dir
-            ctl1 |= ((uint32_t)(state->bytes) << 16); // BYTENUM = len
-            ctl1 |= I2C_CTL1_TRDIR; // Master Receive
-            ctl1 |= I2C_CTL1_START; // Set START bit (Restart)
-            I2C_CTL1(I2Cx) = ctl1;
-  
-        } else {
-            // Transaction Complete -> Send Stop
-            I2C_CTL1(I2Cx) |= I2C_CTL1_STOP;
-            // Wait for STPDET to finish up.
+    
+    // 3. TC: transfer complete, used for mid-phase switching in two-phase read
+    if ((ctl0 & I2C_CTL0_TCIE) && (status & I2C_STAT_TC)) {
+        if (state->reading && ctx->subaddress_sent && ctx->phase == 1) {
+            // Phase1 complete (register address sent), configure Phase2 to receive data
+            
+            // Disable all interrupts first to prevent race conditions
+            i2cDisableAllInterrupts(I2Cx);
+            
+            ctx->index = 0;
+            ctx->phase = 2;  // Mark entering Phase2
+            
+            // Configure CTL1 register atomically to send Repeated Start
+            uint32_t ctl1_new = 0;
+            ctl1_new |= (state->addr & I2C_CTL1_SADDRESS);  // Slave address
+            ctl1_new |= I2C_CTL1_TRDIR;                      // TRDIR=1: master receive
+            ctl1_new |= ((uint32_t)state->bytes << 16);      // BYTENUM=bytes to receive
+            ctl1_new |= I2C_CTL1_AUTOEND;                    // AUTOEND=1: auto NACK+STOP on last byte
+            ctl1_new |= I2C_CTL1_START;                      // START bit (Repeated Start)
+            
+            // Verify BYTENUM is not 0
+            if (state->bytes == 0) {
+                state->error = true;
+                state->busy = 0;
+                return;
+            }
+            
+            __DSB();                                        
+            I2C_CTL1(I2Cx) = ctl1_new;                      
+            __DSB();
+            __ISB();
+            
+            // Enable receive interrupts
+            I2C_CTL0(I2Cx) |= (I2C_CTL0_RBNEIE | I2C_CTL0_NACKIE | I2C_CTL0_STPDETIE | I2C_CTL0_ERRIE);
         }
+        return;
     }
-    // 5. Transmit Interrupt (TI) - Write Data
-    // Lowest priority, only if we are not done and not in error/stop state.
-    else if ((ctl0 & I2C_CTL0_TIE) && (status & I2C_STAT_TI)) {
-        if (ev_state->index == -1) {
-            // Sending Subaddress (Register Address)
+    
+    // 4. RBNE: receive buffer not empty
+    if ((ctl0 & I2C_CTL0_RBNEIE) && (status & I2C_STAT_RBNE)) {
+        // Read data (must read, otherwise RBNE flag won't clear)
+        uint8_t data = (uint8_t)I2C_RDATA(I2Cx);
+        if (ctx->index < state->bytes) {
+            state->read_p[ctx->index++] = data;
+        }
+        // AUTOEND will auto send NACK+STOP, STPDET interrupt ends transfer
+        return;
+    }
+    
+    // 5. TI: transmit buffer empty
+    if ((ctl0 & I2C_CTL0_TIE) && (status & I2C_STAT_TI)) {
+        if (state->writing) {
+            // Write operation
+            if (ctx->index == -1) {
+                // Send register address first
+                I2C_TDATA(I2Cx) = state->reg;
+                ctx->index = 0;
+            } else if (ctx->index < state->bytes) {
+                // Send data
+                while(!i2c_flag_get(I2Cx, I2C_FLAG_TI));
+                I2C_TDATA(I2Cx) = state->write_p[ctx->index++];
+            }
+            // After all data sent, disable TI interrupt, wait for AUTOEND to auto send STOP
+            if (ctx->index >= state->bytes) {
+                I2C_CTL0(I2Cx) &= ~I2C_CTL0_TIE;
+            }
+        } else if (state->reading && !ctx->subaddress_sent) {
+            // Read operation Phase1: send register address
             I2C_TDATA(I2Cx) = state->reg;
-            ev_state->index = 0;
-            // Note: TI clears when TDATA is written.
-        } else if (state->writing && ev_state->index < state->bytes) {
-            // Sending Data
-            I2C_TDATA(I2Cx) = state->write_p[ev_state->index++];
+            ctx->subaddress_sent = 1;
+            // Disable TI interrupt, wait for TC to trigger Phase2
+            I2C_CTL0(I2Cx) &= ~I2C_CTL0_TIE;
         }
+        return;
     }
 }
 
+/* I2C initialization */
 void i2cInit(i2cDevice_e device)
 {
     if (device == I2CINVALID)
@@ -504,43 +626,51 @@ void i2cInit(i2cDevice_e device)
         return;
     }
 
-    uint32_t I2Cx = (uint32_t )i2cDevice[device].reg;
+    uint32_t I2Cx = (uint32_t)i2cDevice[device].reg;
+    
+    // Clear transfer state
     memset(&pDev->state, 0, sizeof(pDev->state));
-    memset(&i2c_ev_state[device], 0, sizeof(i2cEvState_t));
+    
+    // Initialize transfer context - ensure all fields are zeroed
+    volatile i2cContext_t *ctx = &i2cContext[device];
+    ctx->index = 0;
+    ctx->subaddress_sent = 0;
+    ctx->final_stop = 0;
+    ctx->phase = 0;
 
     IOInit(scl, OWNER_I2C_SCL, RESOURCE_INDEX(device));
     IOInit(sda, OWNER_I2C_SDA, RESOURCE_INDEX(device));
 
-    // Enable RCC
+    // Enable I2C clock
     RCC_ClockCmd(hw->rcc, ENABLE);
 
+    // Recover bus from stuck condition
     i2cUnstick(scl, sda);
 
-     // Init pins
+    // Configure GPIO as open-drain alternate function
     IOConfigGPIOAF(scl, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sclAF);
     IOConfigGPIOAF(sda, pDev->pullUp ? IOCFG_I2C_PU : IOCFG_I2C, pDev->sdaAF);
 
-    // Reset I2C
+    // Reset I2C peripheral
     i2c_deinit(I2Cx);
     
-    // Configure timing for 400kHz
-    pDev->clockSpeed = ((pDev->clockSpeed > 400) ? 400 : pDev->clockSpeed);
+    i2c_timing_config(I2Cx, 0x4, 0x4, 0x2);
+    i2c_master_clock_config(I2Cx, 0x2D, 0xE0);
     
-    // Configure I2C timing - values for 400kHz 
-    i2c_timing_config(I2Cx, 0x1, 0x7, 0x0);
-    i2c_master_clock_config(I2Cx, 0x2D, 0x87);
-    
-    // Configure address format
+    // Configure as 7-bit address mode
     i2c_address_config(I2Cx, 0, I2C_ADDFORMAT_7BITS);
     
-    // Enable clock stretching and other features
+    // Enable clock stretching (slave can pull SCL low)
     i2c_stretch_scl_low_enable(I2Cx);
+
+    // Enable analog and digital noise filter
     i2c_analog_noise_filter_enable(I2Cx);
+    i2c_digital_noise_filter_config(I2Cx,FILTER_LENGTH_15);
     
-    // Enable I2C
+    // Enable I2C peripheral
     i2c_enable(I2Cx);
     
-    // I2C Interrupt
+    // Configure and enable interrupt priorities
     nvic_irq_enable(hw->er_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_ER), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_ER));
     nvic_irq_enable(hw->ev_irq, NVIC_PRIORITY_BASE(NVIC_PRIO_I2C_EV), NVIC_PRIORITY_SUB(NVIC_PRIO_I2C_EV));
 }
