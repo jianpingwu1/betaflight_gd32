@@ -109,27 +109,15 @@
 
 #define USE_EXTI
 
-// #define USE_PID_DENOM_CHECK
-// #define USE_PID_DENOM_OVERCLOCK_LEVEL 2
+#define USE_PID_DENOM_CHECK
+#define USE_PID_DENOM_OVERCLOCK_LEVEL 2
 
 #define FLASH_PAGE_SIZE ((uint32_t)0x1000) // 4K sectors
-
-
-#ifdef USE_SPI
-#ifdef USE_SPI_DEVICE_0
-#ifndef SPI0_TX_DMA_OPT
-#define SPI0_TX_DMA_OPT (DMA_OPT_UNUSED)
-#endif
-#ifndef SPI0_RX_DMA_OPT
-#define SPI0_RX_DMA_OPT (DMA_OPT_UNUSED)
-#endif
-#endif
-#endif
 
 #if !defined(ADC0_DMA_OPT)
 #define ADC0_DMA_OPT (DMA_OPT_UNUSED)
 #endif
 
-// #if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
-// #define USE_LED_STRIP_CACHE_MGMT
-// #endif
+#if defined(USE_LED_STRIP) && !defined(USE_LED_STRIP_CACHE_MGMT)
+#define USE_LED_STRIP_CACHE_MGMT
+#endif

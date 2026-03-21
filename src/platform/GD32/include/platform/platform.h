@@ -387,7 +387,8 @@ extern uint8_t _dmaram_end__;
 // defined for the target, FAST_CODE_PREF will become an alias to FAST_CODE (in the common post
 // header file), and functions decorated with FAST_CODE_PREF *will* go into ITCM RAM.
 
-#define FAST_CODE_NOINLINE          NOINLINE
+// #define FAST_CODE_NOINLINE          NOINLINE
+#define FAST_CODE_NOINLINE          __attribute__((section(".tcm_code"))) NOINLINE
 #endif // USE_ITCM_RAM
 
 

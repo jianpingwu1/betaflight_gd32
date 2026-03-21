@@ -90,34 +90,7 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_DMA1);
     rcu_periph_clock_enable(RCU_DMAMUX);
 
-    /* enable APB1 peripherals clock */
-    // rcu_periph_clock_enable(RCU_TIMER1);
-    // rcu_periph_clock_enable(RCU_TIMER2);
-    // rcu_periph_clock_enable(RCU_TIMER3);
-    // rcu_periph_clock_enable(RCU_TIMER4);
-    // rcu_periph_clock_enable(RCU_TIMER5);
-    // rcu_periph_clock_enable(RCU_TIMER6);
-    // rcu_periph_clock_enable(RCU_SPI1);
-    // rcu_periph_clock_enable(RCU_SPI2);
-    // rcu_periph_clock_enable(RCU_USART1);
-    // rcu_periph_clock_enable(RCU_USART2);
-    // rcu_periph_clock_enable(RCU_UART3);
-    // rcu_periph_clock_enable(RCU_UART4);
-    // rcu_periph_clock_enable(RCU_I2C0);
-    // rcu_periph_clock_enable(RCU_I2C1);
-    // rcu_periph_clock_enable(RCU_I2C2);
-    // rcu_periph_clock_enable(RCU_PMU);
-    // rcu_periph_clock_enable(RCU_DAC);
-
-    // rcu_periph_clock_enable(RCU_TIMER0);
-    // rcu_periph_clock_enable(RCU_TIMER7);
-    // rcu_periph_clock_enable(RCU_USART0);
-    // rcu_periph_clock_enable(RCU_USART5);
-    // rcu_periph_clock_enable(RCU_ADC0);
-    // rcu_periph_clock_enable(RCU_ADC1);
-    // rcu_periph_clock_enable(RCU_ADC2);
-    // rcu_periph_clock_enable(RCU_SPI0);
-    // rcu_periph_clock_enable(RCU_SYSCFG);
+    rcu_periph_clock_enable(RCU_SYSCFG);
 
     rcu_periph_clock_enable(RCU_OSPI0);
     rcu_periph_clock_enable(RCU_OSPI1);
@@ -147,8 +120,6 @@ bool isMPUSoftReset(void)
 /*
  * Memory mapped targets use a bootloader which enables memory mapped mode before running the firmware directly from external flash.
  * Code running from external flash, i.e. most of the firmware, must not disable peripherals or reconfigure pins used by the CPU to access the flash chip.
- * Refer to reference manuals and linker scripts for addresses of memory mapped regions.
- * STM32H830 - RM0468 "Table 6. Memory map and default device memory area attributes"
  *
  * If the config is also stored on the same flash chip that code is running from then VERY special care must be taken when detecting the flash chip
  * and when writing an updated config back to the flash.
@@ -163,8 +134,8 @@ bool isMemoryMappedModeEnabledOnBoot(void)
 
 void memoryMappedModeInit(void)
 {
-    // // Smaller MCU packages have ONE OCTOSPI interface which supports memory mapped mode.
-    // memoryMappedModeEnabledOnBoot = READ_BIT(OCTOSPI1->CR, OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE;
+    // Smaller MCU packages have ONE OSPI interface which supports memory mapped mode.
+    memoryMappedModeEnabledOnBoot = READ_BIT(OSPI_CTL(OSPI0), OSPI_CTL_FMOD) == OSPI_CTL_FMOD;
 }
 #else
 bool isMemoryMappedModeEnabledOnBoot(void)
@@ -187,14 +158,13 @@ void systemInit(void)
     // cache RCU RSTSCK register value to use it in isMPUSoftReset() and others
     cachedRccCsrValue = RCU_RSTSCK;
 
-    // // Enable debug interface in low-power modes
-    // // This prevents "Failed to power up DAP" errors with J-Link/ST-Link
-    // // Must be set after every reset to maintain debugger connection
-    // DBG_CTL0 |= (DBG_CTL0_SLP_HOLD | DBG_CTL0_DSLP_HOLD | DBG_CTL0_STB_HOLD);
+//     // Enable debug interface in low-power modes
+//     // This prevents "Failed to power up DAP" errors with J-Link/ST-Link
+//     // Must be set after every reset to maintain debugger connection
+//     DBG_CTL0 |= (DBG_CTL0_SLP_HOLD | DBG_CTL0_DSLP_HOLD | DBG_CTL0_STB_HOLD);
 
 //     // Although VTOR is already loaded with a possible vector table in RAM,
 //     // removing the call to NVIC_SetVectorTable causes USB not to become active,
-
 // #ifdef VECT_TAB_SRAM
 //     extern uint8_t isr_vector_table_base;
 //     nvic_vector_table_set((uint32_t)&isr_vector_table_base, 0x0);

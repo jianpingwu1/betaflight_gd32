@@ -55,10 +55,10 @@
 //#define __SYSTEM_CLOCK_LPIRC4M                  (__LPIRC4M)
 
 /* use HXTAL(CK_HXTAL = 25M) */
-//#define __SYSTEM_CLOCK_HXTAL                    (__HXTAL)
-//#define __SYSTEM_CLOCK_200M_PLL0_HXTAL          (uint32_t)(200000000)
-//#define __SYSTEM_CLOCK_400M_PLL0_HXTAL          (uint32_t)(400000000)
-//#define __SYSTEM_CLOCK_480M_PLL0_HXTAL          (uint32_t)(480000000)
+// #define __SYSTEM_CLOCK_HXTAL                    (__HXTAL)
+// #define __SYSTEM_CLOCK_200M_PLL0_HXTAL          (uint32_t)(200000000)
+// #define __SYSTEM_CLOCK_400M_PLL0_HXTAL          (uint32_t)(400000000)
+// #define __SYSTEM_CLOCK_480M_PLL0_HXTAL          (uint32_t)(480000000)
 #define __SYSTEM_CLOCK_600M_PLL0_HXTAL          (uint32_t)(600000000)
 
 #if defined (__SYSTEM_CLOCK_200M_PLL0_HXTAL)
@@ -842,7 +842,7 @@ static void system_clock_400m_hxtal(void)
     SYSCFG_SRAMCFG1 |= SYSCFG_SRAMCFG1_TCM_WAITSTATE;
 
     /* HXTAL is stable */
-    /* AHB = SYSCLK / 1 */
+    /* AHB = SYSCLK / 2 */
     RCU_CFG0 |= RCU_AHB_CKSYS_DIV2;
     /* APB4 = AHB / 2 */
     RCU_CFG0 |= RCU_APB4_CKAHB_DIV2;

@@ -137,9 +137,7 @@ void spiInitDevice(spiDevice_e device)
     uint32_t spi_periph = PERIPH_INT(spi->dev);
     // Init SPI hardware
     spi_i2s_deinit(spi_periph);
-// #if defined(GD32H7)
-//     spi_af_gpio_control(spi_periph, SPI_GPIO_CONTROL);
-// #endif
+
     spi_dma_disable(spi_periph, SPI_DMA_TRANSMIT);
     spi_dma_disable(spi_periph, SPI_DMA_RECEIVE);
 
