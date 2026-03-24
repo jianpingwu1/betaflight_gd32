@@ -318,7 +318,7 @@ bool pwmDshotMotorHardwareConfig(const timerHardware_t *timerHardware, uint8_t m
 #endif
 
 #if defined(GD32H7)
-    motor->iocfg = IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, pupMode);
+    motor->iocfg = IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, pupMode);
 #else
     motor->iocfg = IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, pupMode);
 #endif

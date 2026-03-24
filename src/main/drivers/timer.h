@@ -42,7 +42,7 @@
 #ifdef AT32F435
 #define CC_INDEX_FROM_CHANNEL(x)      ((uint8_t)(x) - 1)
 #define CC_CHANNEL_FROM_INDEX(x)      ((uint16_t)(x) + 1)
-#elif defined(GD32F4)
+#elif defined(USE_GDBSP_DRIVER)
 #define CC_INDEX_FROM_CHANNEL(x)      (x)
 #define CC_CHANNEL_FROM_INDEX(x)      (x)
 #else
