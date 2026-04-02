@@ -46,27 +46,16 @@ static uint32_t sdio_periph = SDIO0;  // Set by SD_Initialize_LL based on sdioCo
 //#define SD_SPEED_HIGH
 
 
-#define DMA_CHANNEL_4                    ((uint32_t)0x08000000)
-#define DMA_MINC_ENABLE                  ((uint32_t)DMA_CHXCTL_MNAGA)
-#define DMA_MDATAALIGN_WORD              ((uint32_t)DMA_MEMORY_WIDTH_32BIT)
-#define DMA_PDATAALIGN_WORD              ((uint32_t)DMA_PERIPH_WIDTH_32BIT)
-#define DMA_MBURST_INC4                  ((uint32_t)DMA_MEMORY_BURST_4_BEAT)
-#define DMA_PBURST_INC4                  ((uint32_t)DMA_PERIPH_BURST_4_BEAT)
-
 #define BLOCK_SIZE                       ((uint32_t)(512))
-
-#define INTC_CLEAR_MASK_CH3              ((uint32_t)0x0F40000)
-#define INTC_CLEAR_MASK_CH6              ((uint32_t)0x003D000)
 
 #define SDIO_INTC_STATIC_FLAGS           ((uint32_t)(SDIO_INTC_CCRCERRC | SDIO_INTC_DTCRCERRC | SDIO_INTC_CMDTMOUTC |\
                                                      SDIO_INTC_DTTMOUTC | SDIO_INTC_TXUREC | SDIO_INTC_RXOREC  |\
                                                      SDIO_INTC_CMDRECVC  | SDIO_INTC_CMDSENDC  | SDIO_INTC_DTENDC  |\
                                                      SDIO_INTC_DTBLKENDC))
-#define SDIO_MASK_INTC_FLAGS                ((uint32_t)0x1FE00FFF)    /* mask flags of SDIO_INTC */
-#define SDIO_MASK_CMD_FLAGS                 ((uint32_t)0x002000C5)    /* mask flags of CMD FLAGS */
 #define SDIO_MASK_DATA_FLAGS                ((uint32_t)0x18000F3A)    /* mask flags of DATA FLAGS */
 
 #define SD_SOFTWARE_COMMAND_TIMEOUT      ((uint32_t)0x00220000)
+#define SD_TRANSFER_TIMEOUT_MS           ((uint32_t)5000)
 
 #define SD_OCR_ADDR_OUT_OF_RANGE         ((uint32_t)0x80000000)
 #define SD_OCR_ADDR_MISALIGNED           ((uint32_t)0x40000000)
@@ -109,10 +98,6 @@ static uint32_t sdio_periph = SDIO0;  // Set by SD_Initialize_LL based on sdioCo
 #define SD_8TO15BITS                     ((uint32_t)0x0000FF00)
 #define SD_16TO23BITS                    ((uint32_t)0x00FF0000)
 #define SD_24TO31BITS                    ((uint32_t)0xFF000000)
-#define SD_MAX_DATA_LENGTH               ((uint32_t)0x01FFFFFF)
-
-#define SD_CCCC_ERASE                    ((uint32_t)0x00000020)
-
 #define SD_SDIO_SEND_IF_COND             ((uint32_t)SD_CMD_HS_SEND_EXT_CSD)
 
 #define SD_BUS_WIDE_1B                   ((uint32_t)0x00000000)
@@ -129,24 +114,13 @@ static uint32_t sdio_periph = SDIO0;  // Set by SD_Initialize_LL based on sdioCo
 #define CLKCTL_CLEAR_MASK                ((uint32_t)(SDIO_CLKCTL_DIV  | SDIO_CLKCTL_CLKPWRSAV |\
                                                      SDIO_CLKCTL_BUSMODE | SDIO_CLKCTL_CLKEDGE))
 
-#define DATACTRL_CLEAR_MASK              ((uint32_t)(SDIO_DATACTL_DATAEN    | SDIO_DATACTL_DATADIR |\
-                                                     SDIO_DATACTL_TRANSMOD  | SDIO_DATACTL_BLKSZ))
-
-#define CMDCTL_CLEAR_MASK                ((uint32_t)(SDIO_CMDCTL_CMDIDX | SDIO_CMDCTL_CMDRESP |\
-                                                     SDIO_CMDCTL_INTWAIT  | SDIO_CMDCTL_WAITDEND |\
-                                                     SDIO_CMDCTL_CSMEN ))
-
 #define SDIO_INIT_CLK_DIV                ((uint8_t)0x1F4)
 #define SD_CLK_DIV_TRANS_DSPEED          ((uint32_t)0x0008)        /* SD clock division in default speed transmission phase */
 #define SD_CLK_DIV_TRANS_HSPEED          ((uint32_t)0x0004)        /* SD clock division in high speed transmission phase */
 
-#define SDIO_CLK_DIV                     ((uint8_t)0x02)
-
 #define SD_CMD_GO_IDLE_STATE            ((uint8_t)0)   // Resets the SD memory card.
-#define SD_CMD_SEND_OP_COND             ((uint8_t)1)   // Sends host capacity support information and activates the card's initialization process.
 #define SD_CMD_ALL_SEND_CID             ((uint8_t)2)   // Asks any card connected to the host to send the CID numbers on the CMD line.
 #define SD_CMD_SET_REL_ADDR             ((uint8_t)3)   // Asks the card to publish a new relative address (RCA).
-#define SD_CMD_HS_SWITCH                ((uint8_t)6)   // Checks switchable function (mode 0) and switch card function (mode 1).
 #define SD_CMD_SEL_DESEL_CARD           ((uint8_t)7)   // Selects the card by its own relative address and gets deselected by any other address
 #define SD_CMD_HS_SEND_EXT_CSD          ((uint8_t)8)   // Sends SD Memory Card interface condition, which includes host supply voltage information
                                                        // and asks the card whether card supports voltage.
@@ -164,11 +138,6 @@ static uint32_t sdio_periph = SDIO0;  // Set by SD_Initialize_LL based on sdioCo
 #define SD_CMD_WRITE_SINGLE_BLOCK       ((uint8_t)24)  // Writes single block of size selected by SET_BLOCKLEN in case of SDSC, and a block of
                                                        // fixed 512 bytes in case of SDHC and SDXC.
 #define SD_CMD_WRITE_MULT_BLOCK         ((uint8_t)25)  // Continuously writes blocks of data until a STOP_TRANSMISSION follows.
-#define SD_CMD_SD_ERASE_GRP_START       ((uint8_t)32)  // Sets the address of the first write block to be erased. (For SD card only).
-#define SD_CMD_SD_ERASE_GRP_END         ((uint8_t)33)  // Sets the address of the last write block of the continuous range to be erased.
-                                                       // system set by switch function command (CMD6).
-#define SD_CMD_ERASE                    ((uint8_t)38)  // Reserved for SD security applications.
-#define SD_CMD_FAST_IO                  ((uint8_t)39)  // SD card doesn't support it (Reserved).
 #define SD_CMD_APP_CMD                  ((uint8_t)55)  // Indicates to the card that the next command is an application specific command rather
                                                        // than a standard command.
 
@@ -186,7 +155,6 @@ static uint32_t sdio_periph = SDIO0;  // Set by SD_Initialize_LL based on sdioCo
 #define SDIO_DIR_TX 1
 #define SDIO_DIR_RX 0
 
-#define SDIO_DMA_ST3 1
 #define SD_DMA_ERROR ((uint8_t)44)
 
 typedef enum {
@@ -222,7 +190,6 @@ static SD_Handle_t                 SD_Handle;
 static uint32_t                    SD_Status;
 static uint32_t                    SD_CardRCA;
  SD_CardType_t                     SD_CardType;
-static volatile uint32_t           TimeOut;
 
 static void             SD_DataTransferInit         (uint32_t SdioPeriph, uint32_t Size, uint32_t DataBlockSize, bool IsItReadFromCard);
 static SD_Error_t       SD_TransmitCommand          (uint32_t SdioPeriph, uint32_t Command, uint32_t Argument, int8_t ResponseType);
@@ -495,6 +462,13 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
     uint32_t   CmdIndex;
     SD_Handle.RXCplt = 1;
 
+    if (BlockSize != 512) {
+        return SD_ERROR;
+    }
+    // if ((uint32_t)buffer & 0x1F) {
+    //     return SD_ADDR_MISALIGNED;
+    // }
+
     SD_Handle.TransferComplete = 0;
     if(SD_CardType != SD_HIGH_CAPACITY)
     {
@@ -522,13 +496,23 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
 
     if (ErrorState != SD_OK) {
             SD_Handle.RXCplt = 0;
+            return ErrorState;
     }
 
+    uint32_t transferStart = millis();
     while(0U == SD_Handle.TransferComplete) {
+        if (millis() - transferStart > SD_TRANSFER_TIMEOUT_MS) {
+            SD_Handle.TransferError = SD_DATA_TIMEOUT;
+            SD_Handle.RXCplt = 0;
+            return SD_DATA_TIMEOUT;
+        }
     }
 
     // Update the SD transfer error in SD handle
     SD_Handle.TransferError = ErrorState;
+    uint32_t alignedAddr = (uint32_t)buffer & ~0x1FU;
+    SCB_InvalidateDCache_by_Addr((uint32_t*)alignedAddr,
+        (int32_t)(NumberOfBlocks * BlockSize + ((uint32_t)buffer - alignedAddr)));
 
     return ErrorState;
 }
@@ -549,7 +533,12 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     uint32_t   CmdIndex;
     SD_Handle.TXCplt = 1;
 
-    //printf("Reading at %ld into %p %ld blocks\n", (uint32_t)WriteAddress, (void*)buffer, NumberOfBlocks);
+    if (BlockSize != 512) {
+        return SD_ERROR;
+    }
+    // if ((uint32_t)buffer & 0x1F) {
+    //     return SD_ADDR_MISALIGNED;
+    // }
 
     if(SD_CardType != SD_HIGH_CAPACITY)
     {
@@ -576,11 +565,19 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
             return ErrorState;
     }
 
+    SCB_CleanDCache_by_Addr((uint32_t*)buffer, (int32_t)(NumberOfBlocks * BlockSize));
     SD_StartBlockTransfert(buffer, BlockSize, NumberOfBlocks, SDIO_DIR_TX);
 
     // Configure the SD DPSM (Data Path State Machine)
     SD_DataTransferInit(SDIO, BlockSize * NumberOfBlocks, SD_DATABLOCK_SIZE_512B, false);
-   while(0U == SD_Handle.TransferComplete) {
+
+    uint32_t transferStart = millis();
+    while(0U == SD_Handle.TransferComplete) {
+        if (millis() - transferStart > SD_TRANSFER_TIMEOUT_MS) {
+            SD_Handle.TransferError = SD_DATA_TIMEOUT;
+            SD_Handle.TXCplt = 0;
+            return SD_DATA_TIMEOUT;
+        }
     }
 
     SD_Handle.TransferError = ErrorState;
@@ -815,7 +812,6 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
 {
     SD_Error_t ErrorState = SD_OK;
     uint32_t   Temp;
-    //uint32_t   reg;
     uint32_t   SCR[2] = {0, 0};
 
     if((SD_CardType == SD_STD_CAPACITY_V1_1) || (SD_CardType == SD_STD_CAPACITY_V2_0) ||
@@ -846,7 +842,7 @@ static SD_Error_t SD_WideBusOperationConfig(uint32_t WideMode)
                 }
             } else {
                 ErrorState = SD_LOCK_UNLOCK_FAILED;
-         }
+            }
         } else {
             ErrorState = SD_INVALID_PARAMETER;  // WideMode is not a valid argument
         }
@@ -1313,11 +1309,7 @@ void SDIO0_IRQHandler(void)
         SDIO_INTEN(SDIO) &= ~(SDIO_INT_DTCRCERR | SDIO_INT_DTTMOUT | SDIO_INT_DTEND |
                                SDIO_INT_TFH | SDIO_INT_RFH | SDIO_INT_TXURE | SDIO_INT_RXORE);
         SDIO_IDMACTL(SDIO) &= ~SDIO_CMDCTL_TREN;
-        /* Currently doesn't implement multiple block write handling */
         if ((SD_Handle.Operation & 0x02) == (SDIO_DIR_TX << 1)) {
-            /* Disable the stream */
-//            DMA_CHCTL(dma_periph_sdio,dma_channel_sdio) &= ~DMA_CHXCTL_CHEN;
-//            SDIO_DATACTL &= ~(SDIO_DATACTL_DMAEN);
             /* Transfer is complete */
             SD_Handle.TXCplt = 0;
             if ((SD_Handle.Operation & 0x01) == SD_MULTIPLE_BLOCK) {
@@ -1355,7 +1347,7 @@ void SDIO0_IRQHandler(void)
         SDIO_IDMACTL(SDIO) &= ~SDIO_CMDCTL_TREN;
         SDIO_DATACTL(SDIO) |= SDIO_DATACTL_FIFOREST;
         SDIO_DATACTL(SDIO) &= ~SDIO_DATACTL_FIFOREST;
-        /* Send stop command in multiblock write */
+        /* Send stop command to abort transfer on error */
         SD_TransmitCommand(SDIO, (SD_CMD_STOP_TRANSMISSION | SD_CMD_RESPONSE_SHORT), 0, 1);
         SDIO_INTC(SDIO) = SDIO_FLAG_DTABORT;
         SDIO_IDMACTL(SDIO) &= ~SDIO_IDMACTL_IDMAEN;
@@ -1363,14 +1355,14 @@ void SDIO0_IRQHandler(void)
     } else if ((SDIO_STAT(SDIO) & SDIO_INT_FLAG_IDMAERR) != 0){
         SDIO_INTC(SDIO) = SDIO_INT_FLAG_IDMAERR;
         SD_Handle.TransferError = SD_DMA_ERROR;
-    // Disable all SDIO peripheral interrupt sources
+        // Disable all SDIO peripheral interrupt sources
         SDIO_INTEN(SDIO) &= ~(SDIO_INTEN_DTCRCERRIE | SDIO_INTEN_DTTMOUTIE |
                         SDIO_INTEN_DTENDIE | SDIO_INTEN_TFHIE | SDIO_INTEN_RFHIE | SDIO_INTEN_TXUREIE |
                         SDIO_INTEN_RXOREIE);
         SDIO_IDMACTL(SDIO) &= ~SDIO_CMDCTL_TREN;
         SDIO_DATACTL(SDIO) |= SDIO_DATACTL_FIFOREST;
         SDIO_DATACTL(SDIO) &= ~SDIO_DATACTL_FIFOREST;
-        /* Send stop command in multiblock write */
+        /* Send stop command to abort transfer on error */
         SD_TransmitCommand(SDIO, (SD_CMD_STOP_TRANSMISSION | SD_CMD_RESPONSE_SHORT), 0, 1);
         SDIO_INTC(SDIO) = SDIO_FLAG_DTABORT;
         SDIO_IDMACTL(SDIO) &= ~SDIO_IDMACTL_IDMAEN;
