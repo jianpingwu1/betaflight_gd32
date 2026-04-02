@@ -80,7 +80,6 @@ USBSTD_DIR   = $(USB_LIB_DIR)/ustd
 
 DEVICE_STDPERIPH_SRC := \
             $(STDPERIPH_SRC) \
-            $(USBOTG_SRC) \
             $(USBCORE_SRC) \
             $(USBCDC_SRC) \
             $(USBHID_SRC) \
@@ -92,7 +91,7 @@ VPATH        := $(VPATH):$(CMSIS_DIR)/Core/Include:$(LIB_MAIN_DIR)/GD32H7/Firmwa
 
 CMSIS_SRC    :=
 
-INCLUDE_DIRS    += \
+INCLUDE_DIRS := \
             $(INCLUDE_DIRS) \
             $(TARGET_PLATFORM_DIR) \
             $(TARGET_PLATFORM_DIR)/include \
