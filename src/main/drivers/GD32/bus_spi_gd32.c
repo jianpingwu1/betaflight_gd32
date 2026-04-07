@@ -235,10 +235,16 @@ void spiInternalStartDMA(const extDevice_t *dev)
         xDMA_ITConfig(streamRegsRx, DMA_INT_FTF, ENABLE);
 
         // Update streams
-        
+
         xDMA_Init(streamRegsTx, dev->bus->initTx);
         dma_channel_subperipheral_select((uint32_t)(dmaTx->dma), dmaTx->stream, dmaTx->channel);
         xDMA_Init(streamRegsRx, dev->bus->initRx);
+        /* For GD32F4, peripheral width must be 8-bit */
+        if(dev->bus->initRx->config.init_struct_s.periph_memory_width == DMA_PERIPH_WIDTH_16BIT) {
+            if(dev->bus->initRx->data_mode == DMA_DATA_MODE_SINGLE) {
+                dma_periph_width_config((uint32_t)(dmaRx->dma), dmaRx->stream, DMA_PERIPH_WIDTH_8BIT);
+            }
+        }
         dma_channel_subperipheral_select((uint32_t)(dmaRx->dma), dmaRx->stream, dmaRx->channel);
 
         /* Note from AN4031
@@ -269,6 +275,7 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Update stream
         xDMA_Init(streamRegsTx, dev->bus->initTx);
+        dma_channel_subperipheral_select((uint32_t)(dmaTx->dma), dmaTx->stream, dmaTx->channel);
 
         /* Note from AN4031
          *
