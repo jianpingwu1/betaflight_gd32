@@ -465,9 +465,9 @@ SD_Error_t SD_ReadBlocks_DMA(uint64_t ReadAddress, uint32_t *buffer, uint32_t Bl
     if (BlockSize != 512) {
         return SD_ERROR;
     }
-    // if ((uint32_t)buffer & 0x1F) {
-    //     return SD_ADDR_MISALIGNED;
-    // }
+    if ((uint32_t)buffer & 0x1F) {
+        return SD_ADDR_MISALIGNED;
+    }
 
     SD_Handle.TransferComplete = 0;
     if(SD_CardType != SD_HIGH_CAPACITY)
@@ -536,9 +536,9 @@ SD_Error_t SD_WriteBlocks_DMA(uint64_t WriteAddress, uint32_t *buffer, uint32_t 
     if (BlockSize != 512) {
         return SD_ERROR;
     }
-    // if ((uint32_t)buffer & 0x1F) {
-    //     return SD_ADDR_MISALIGNED;
-    // }
+    if ((uint32_t)buffer & 0x1F) {
+        return SD_ADDR_MISALIGNED;
+    }
 
     if(SD_CardType != SD_HIGH_CAPACITY)
     {
