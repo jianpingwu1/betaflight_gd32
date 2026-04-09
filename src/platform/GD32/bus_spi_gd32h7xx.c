@@ -328,12 +328,17 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
             dmaInitRx->memory0_addr = (uint32_t)&dummyRxByte;
             dmaInitRx->memory_inc = DMA_MEMORY_INCREASE_DISABLE;
         }
+#if defined(GD32F4)
         // If possible use 16 bit memory writes to prevent atomic access issues on gyro data
         if ((dmaInitRx->memory0_addr & 0x1) || (len & 0x1)) {
             dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
         } else {
             dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
         }
+#else
+        dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+#endif
+
         dmaInitRx->number = len;
     }
 }
@@ -373,9 +378,17 @@ void spiInternalStartDMA(const extDevice_t *dev)
         dma_channel_subperipheral_select((uint32_t)(dmaTx->dma), dmaTx->stream, dmaTx->channel);
 #endif
 
-        xDMA_Init(streamRegsRx, (dma_general_config_struct *)dev->bus->dmaInitRx);
+        dma_general_config_struct * dmaGenerInitRx = (dma_general_config_struct *)dev->bus->dmaInitRx;
+        xDMA_Init(streamRegsRx, dmaGenerInitRx);
 
 #if defined(GD32F4)
+        /* For GD32F4, peripheral width must be 8-bit */
+        if(dmaGenerInitRx->config.init_struct_s.periph_memory_width == DMA_PERIPH_WIDTH_16BIT) {
+            if(dmaGenerInitRx->data_mode == DMA_DATA_MODE_SINGLE) {
+                dma_periph_width_config((uint32_t)(dmaRx->dma), dmaRx->stream, DMA_PERIPH_WIDTH_8BIT);
+            }
+        }
+
         dma_channel_subperipheral_select((uint32_t)(dmaRx->dma), dmaRx->stream, dmaRx->channel);
 #endif
 
@@ -411,6 +424,9 @@ void spiInternalStartDMA(const extDevice_t *dev)
 
         // Update stream
         xDMA_Init(streamRegsTx, dev->bus->dmaInitTx);
+#if defined(GD32F4)
+        dma_channel_subperipheral_select((uint32_t)(dmaTx->dma), dmaTx->stream, dmaTx->channel);
+#endif
 
         // Enable stream
         dma_channel_enable((uint32_t)(dmaTx->dma), dmaTx->stream);
@@ -454,7 +470,7 @@ void spiInternalStopDMA (const extDevice_t *dev)
 
         // Drain the RX buffer
         while (spi_i2s_flag_get(spi_periph, I2S_FLAG_RBNE)) {
-            SPI_RDATA(spi_periph);
+            SPI_DATA(spi_periph);
         }
 
         // Disable stream

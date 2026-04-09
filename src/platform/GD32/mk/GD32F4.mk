@@ -145,7 +145,7 @@ MCU_COMMON_SRC = \
             GD32/adc_gd32.c \
             GD32/audio_gd32.c \
             GD32/bus_i2c_gd32.c \
-            GD32/bus_spi_gd32.c \
+            GD32/bus_spi_gd32h7xx.c \
             GD32/camera_control_gd32.c \
             GD32/debug.c \
             GD32/dma_gd32.c \
