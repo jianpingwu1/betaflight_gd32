@@ -181,7 +181,7 @@ void spiInternalResetDescriptors(busDevice_t *bus)
 
         dma_single_data_para_struct_init(dmaInitRx);
 #if defined(GD32H7)
-    dmaInitTx->request = bus->dmaRx->channel;
+    dmaInitRx->request = bus->dmaRx->channel;
 #else
     dmaGenerInitTx->sub_periph = bus->dmaRx->channel;
 #endif
@@ -328,16 +328,8 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
             dmaInitRx->memory0_addr = (uint32_t)&dummyRxByte;
             dmaInitRx->memory_inc = DMA_MEMORY_INCREASE_DISABLE;
         }
-#if defined(GD32F4)
-        // If possible use 16 bit memory writes to prevent atomic access issues on gyro data
-        if ((dmaInitRx->memory0_addr & 0x1) || (len & 0x1)) {
-            dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
-        } else {
-            dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-        }
-#else
+
         dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
-#endif
 
         dmaInitRx->number = len;
     }
@@ -393,8 +385,11 @@ void spiInternalStartDMA(const extDevice_t *dev)
 #endif
 
 #if defined(GD32H7)
+        /* Disable SPI before configuring transfer count */
+        spi_disable(spi_periph);
         /* configure SPI current data number  */
         spi_current_data_num_config(spi_periph, dev->bus->curSegment->len);
+        spi_enable(spi_periph);
 #endif
         // Enable streams
         dma_channel_enable((uint32_t)(dmaRx->dma), dmaRx->stream);
