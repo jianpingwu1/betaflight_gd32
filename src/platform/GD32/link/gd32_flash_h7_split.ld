@@ -211,19 +211,20 @@ SECTIONS
     __fastram_bss_end__ = _efastram_bss;
   } >FASTRAM
 
-  /* used during startup to initialized dmaram_data */
-  _sdmaram_idata = LOADADDR(.dmaram_data);
-
-  /* Align dmaram_start to 64KB inside the RAM region.
-   * memprot_gd32.c configures a 32KB MPU region for this area; the base
-   * address must be aligned to the region size to ensure full coverage.
-   * 64KB (vs the required 32KB) provides safety margin for future growth.
-   * Must be inside the section body: a standalone ". = ALIGN()" here would
-   * advance the FASTRAM counter (prior section) instead of RAM.
+  /* Align dmaram_start to 64KB (matches MPU region size for ~24KB dmaram).
+   * NOLOAD prevents FLASH padding; must be a separate >RAM section because
+   * a standalone ". = ALIGN()" would advance the preceding FASTRAM counter.
    */
-  .dmaram_data :
+  .dmaram_align (NOLOAD) :
   {
     . = ALIGN(0x10000);
+  } >RAM
+
+  /* used during startup to initialize dmaram_data */
+  _sdmaram_idata = LOADADDR(.dmaram_data);
+
+  .dmaram_data :
+  {
     PROVIDE(dmaram_start = .);
     _sdmaram = .;
     _dmaram_start__ = _sdmaram;
