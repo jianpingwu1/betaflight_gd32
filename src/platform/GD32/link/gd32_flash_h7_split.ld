@@ -214,9 +214,16 @@ SECTIONS
   /* used during startup to initialized dmaram_data */
   _sdmaram_idata = LOADADDR(.dmaram_data);
 
-  . = ALIGN(32);
+  /* Align dmaram_start to 64KB inside the RAM region.
+   * memprot_gd32.c configures a 32KB MPU region for this area; the base
+   * address must be aligned to the region size to ensure full coverage.
+   * 64KB (vs the required 32KB) provides safety margin for future growth.
+   * Must be inside the section body: a standalone ". = ALIGN()" here would
+   * advance the FASTRAM counter (prior section) instead of RAM.
+   */
   .dmaram_data :
   {
+    . = ALIGN(0x10000);
     PROVIDE(dmaram_start = .);
     _sdmaram = .;
     _dmaram_start__ = _sdmaram;
@@ -260,10 +267,15 @@ SECTIONS
     _dmarw_end__ = _edmarw;
   } >SRAM0_1
 
+  /* Align dmarwaxi_start to 16KB inside the RAM region.
+   * .DMA_RW_AXI holds LED strip / bitbang DSHOT / USB MSC buffers (~11KB max).
+   * memprot_gd32.c will configure a 16KB MPU region; base address must match.
+   */
   .DMA_RW_AXI (NOLOAD) :
   {
-    . = ALIGN(32);
+    . = ALIGN(0x4000);
     PROVIDE(dmarwaxi_start = .);
+
     _sdmarwaxi = .;
     _dmarwaxi_start__ = _sdmarwaxi;
     KEEP(*(.DMA_RW_AXI))

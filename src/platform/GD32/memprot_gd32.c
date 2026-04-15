@@ -77,11 +77,14 @@ void memProtConfigure(mpuRegion_t *regions, unsigned regionCount)
             // Find most significant bit position using GCC builtin
             int msbpos = 32 - __builtin_clzl(length) - 1;
 
-            if (length != (1U << msbpos)) {
+            if (length > (1U << msbpos)) {
                 msbpos += 1;
             }
 
-            mpu_init_struct.region_size = msbpos;
+            // RASR SIZE field encoding: region_bytes = 2^(SIZE+1), so SIZE = msbpos - 1.
+            // msbpos is the exponent such that 2^msbpos >= length (ceil of log2).
+            // Writing msbpos directly would configure a region twice as large as needed.
+            mpu_init_struct.region_size = msbpos - 1;
         }
 
         // Copy per region attributes
@@ -128,7 +131,7 @@ void memProtReset(void)
         mpu_init_struct.access_bufferable = MPU_ACCESS_NON_BUFFERABLE;
         mpu_init_struct.subregion_disable = 0x00;
         mpu_init_struct.tex_type = MPU_TEX_TYPE0;
-        
+
         /* configure the region (this effectively disables it) */
         mpu_region_config(&mpu_init_struct);
         // Note: Don't enable the region to keep it disabled

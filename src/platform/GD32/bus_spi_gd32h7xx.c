@@ -400,7 +400,6 @@ void spiInternalStartDMA(const extDevice_t *dev)
         spi_dma_enable(spi_periph, SPI_DMA_TRANSMIT);
 
 #if defined(GD32H7)
-        spi_enable(spi_periph);
         spi_master_transfer_start(spi_periph, SPI_TRANS_START);
 #endif
 

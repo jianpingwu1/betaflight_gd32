@@ -1117,6 +1117,7 @@ static SD_Error_t SD_FindSCR(uint32_t *pSCR)
 bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
 {
     UNUSED(dma);
+    uint32_t timeout = 0;
 
     // Select SDIO peripheral based on configuration
     sdio_periph = (sdioConfig()->device == SDIO_DEV_TO_CFG(SDIODEV_2)) ? SDIO1 : SDIO0;
@@ -1144,9 +1145,12 @@ bool SD_Initialize_LL(DMA_Stream_TypeDef *dma)
     /* enable PLL1 clock */
     rcu_osci_on(RCU_PLL1_CK);
 
-    if(ERROR == rcu_osci_stab_wait(RCU_PLL1_CK)) {
-        while(1) {
-        }
+    while(timeout < 0xFFFF && ERROR == rcu_osci_stab_wait(RCU_PLL1_CK)) {
+        delay(1);
+        timeout++;
+    }
+    if(timeout >= 0xFFFF) {
+        return false; // PLL1 failed to stabilize
     }
 
     // Enable clock for the selected SDIO
