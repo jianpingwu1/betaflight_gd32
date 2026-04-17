@@ -78,8 +78,8 @@ uint8_t bbPuPdMode;
 FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
 
  const timerHardware_t bbTimerHardware[] = {
- #if defined(GD32F4) 
-     DEF_TIMER(TIMER7,  CH0, NONE,   0, 1),  
+ #if defined(GD32F4)
+     DEF_TIMER(TIMER7,  CH0, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH1, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER7,  CH3, NONE,   0, 0),
@@ -90,16 +90,19 @@ FAST_DATA_ZERO_INIT timeUs_t dshotFrameUs;
      DEF_TIMER(TIMER0,  CH2, NONE,   0, 1),
      DEF_TIMER(TIMER0,  CH3, NONE,   0, 0),
 #elif defined(GD32H7)
-    // todo
-     DEF_TIMER(TIMER7,  CH0, NONE,   0, 1, 0),  
-     DEF_TIMER(TIMER7,  CH1, NONE,   0, 1, 0),
-     DEF_TIMER(TIMER7,  CH2, NONE,   0, 1, 0),
-     DEF_TIMER(TIMER7,  CH3, NONE,   0, 0, 0),
+    // XXX TODO:GD32H7 can use any timer for pacing
+    // GD32H7: dmaopt is a direct index into dmaChannelSpec[] due to DMAMUX architecture.
+    // Index mapping: 0-7 = DMA0 Ch0-7, 8-15 = DMA1 Ch0-7
+    // DMA0 CH0,1,2,3 (indices 5/6/7) are duplicated for TIMER0 and TIMER7.
+    DEF_TIMER(TIMER7,  CH0, NONE,   0,  0, 0),  // pacer: DMA0 CH0
+    DEF_TIMER(TIMER7,  CH1, NONE,   0,  1, 0),  // pacer: DMA0 CH1
+    DEF_TIMER(TIMER7,  CH2, NONE,   0,  2, 0),  // pacer: DMA0 CH2
+    DEF_TIMER(TIMER7,  CH3, NONE,   0,  3, 0),  // pacer: DMA1 CH3
 
-     DEF_TIMER(TIMER0,  CH0, NONE,   0, 1, 0),
-     DEF_TIMER(TIMER0,  CH1, NONE,   0, 1, 0),
-     DEF_TIMER(TIMER0,  CH2, NONE,   0, 1, 0),
-     DEF_TIMER(TIMER0,  CH3, NONE,   0, 0, 0),
+    DEF_TIMER(TIMER0,  CH0, NONE,   0, 0, 0),  // pacer: DMA1 CH0
+    DEF_TIMER(TIMER0,  CH1, NONE,   0, 1, 0),  // pacer: DMA1 CH1
+    DEF_TIMER(TIMER0,  CH2, NONE,   0, 2, 0),  // pacer: DMA1 CH2
+    DEF_TIMER(TIMER0,  CH3, NONE,   0, 3, 0),  // pacer: DMA1 CH3
  #else
  #error MCU dependent code required
  #endif
@@ -757,7 +760,7 @@ bool dshotBitbangDevInit(motorDevice_t *device, const motorDevConfig_t *motorCon
         bbMotors[motorIndex].io = io;
         bbMotors[motorIndex].output = output;
 #if defined(GD32H7)
-        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, bbPuPdMode);
+        bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, bbPuPdMode);
 #else
         bbMotors[motorIndex].iocfg = IO_CONFIG(GPIO_MODE_OUTPUT, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, bbPuPdMode);
 #endif

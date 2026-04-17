@@ -100,7 +100,7 @@ void transponderIrHardwareInit(ioTag_t ioTag, transponder_t *transponder)
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 
 #if defined(GD32H7)
-    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), timerHardware->alternateFunction);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), timerHardware->alternateFunction);
 #else
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), timerHardware->alternateFunction);
 #endif
@@ -249,7 +249,7 @@ void transponderIrDisable(void)
     IOInit(transponderIO, OWNER_TRANSPONDER, 0);
 
 #if defined(GD32H7)
-    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), alternateFunction);
+    IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), alternateFunction);
 #else
     IOConfigGPIOAF(transponderIO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLDOWN), alternateFunction);
 #endif

@@ -89,14 +89,13 @@
 #define USE_BEEPER
 
 #ifdef USE_SDCARD
-#ifndef USE_SDCARD_SDIO
 #define USE_SDCARD_SPI
-#endif
+#define USE_SDCARD_SDIO
 #endif
 
 #define USE_SPI
 #define SPI_FULL_RECONFIGURABILITY
-#define USE_SPI_DMA_ENABLE_EARLY
+#define USE_SPI_DMA_ENABLE_LATE
 
 #define USE_USB_DETECT
 
@@ -108,6 +107,8 @@
 #endif
 
 #define USE_EXTI
+
+// #define USE_TIMER_UP_CONFIG  //TODO
 
 // #define USE_PID_DENOM_CHECK
 // #define USE_PID_DENOM_OVERCLOCK_LEVEL 2

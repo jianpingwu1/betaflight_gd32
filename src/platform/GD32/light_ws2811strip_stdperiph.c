@@ -118,7 +118,7 @@ bool ws2811LedStripHardwareInit(void)
 #if defined(GD32F4)
     IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_50MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
 #else
-    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_85MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
+    IOConfigGPIOAF(ws2811IO, IO_CONFIG(GPIO_MODE_AF, GPIO_OSPEED_60MHZ, GPIO_OTYPE_PP, GPIO_PUPD_PULLUP), timerHardware->alternateFunction);
 #endif
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
