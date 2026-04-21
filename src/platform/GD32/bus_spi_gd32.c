@@ -206,12 +206,9 @@ void spiInternalInitStream(const extDevice_t *dev, volatile busSegment_t *segmen
             dmaInitRx->memory0_addr = (uint32_t)&dummyRxByte;
             dmaInitRx->memory_inc = DMA_MEMORY_INCREASE_DISABLE;
         }
-        // If possible use 16 bit memory writes to prevent atomic access issues on gyro data
-        if ((dmaInitRx->memory0_addr & 0x1) || (len & 0x1)) {
-            dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
-        } else {
-            dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-        }
+
+        dmaInitRx->periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+
         dmaInitRx->number = len;
     }
 }

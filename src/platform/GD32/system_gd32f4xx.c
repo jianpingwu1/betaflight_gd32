@@ -67,12 +67,12 @@ void checkForBootLoaderRequest(void)
         return;
     }
     persistentObjectWrite(PERSISTENT_OBJECT_RESET_REASON, RESET_NONE);
-    
+
     rcu_periph_clock_enable(RCU_SYSCFG);
     syscfg_bootmode_config(SYSCFG_BOOTMODE_BOOTLOADER);
 
     extern isrVector_t system_isr_vector_table_base;
-    
+
     SCB->VTOR = (uint32_t)&system_isr_vector_table_base;
     __DSB();
     __DSB();
@@ -128,6 +128,8 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_TIMER9);
     rcu_periph_clock_enable(RCU_TIMER10);
 
+    /* Eliminate the impact of the bootloader */
+    timer_deinit(TIMER1);
 }
 
 void sys_clock_config(void)
