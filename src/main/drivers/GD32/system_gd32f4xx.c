@@ -141,7 +141,7 @@ void checkForBootLoaderRequest(void)
     syscfg_bootmode_config(SYSCFG_BOOTMODE_BOOTLOADER);
 
     extern isrVector_t system_isr_vector_table_base;
-    
+
     SCB->VTOR = (uint32_t)&system_isr_vector_table_base;
     __DSB();
     __DSB();
@@ -198,6 +198,8 @@ void enableGPIOPowerUsageAndNoiseReductions(void)
     rcu_periph_clock_enable(RCU_TIMER9);
     rcu_periph_clock_enable(RCU_TIMER10);
 
+    /* Eliminate the impact of the bootloader */
+    timer_deinit(TIMER1);
 }
 
 
@@ -263,7 +265,7 @@ void sys_clock_config(void)
     /* APB1 = AHB/4 */
     RCU_CFG0 |= RCU_APB1_CKAHB_DIV4;
 
-    /* Configure the main PLL, PSC = 25, PLL_N = 400, PLL_P = 2, PLL_Q = 9 */ 
+    /* Configure the main PLL, PSC = 25, PLL_N = 400, PLL_P = 2, PLL_Q = 9 */
     RCU_PLL = (pll_m | (pll_n << 6U) | (((pll_p >> 1U) - 1U) << 16U) |
                    (pll_src) | (pll_q << 24U));
 
@@ -273,16 +275,16 @@ void sys_clock_config(void)
     /* wait until PLL is stable */
     while(0U == (RCU_CTL & RCU_CTL_PLLSTB)){
     }
-    
+
     /* Enable the high-drive to extend the clock frequency to 200 Mhz */
     PMU_CTL |= PMU_CTL_HDEN;
     while(0U == (PMU_CS & PMU_CS_HDRF)){
     }
-    
+
     /* select the high-drive mode */
     PMU_CTL |= PMU_CTL_HDS;
     while(0U == (PMU_CS & PMU_CS_HDSRF)){
-    } 
+    }
 
     reg_temp = RCU_CFG0;
     /* select PLL as system clock */

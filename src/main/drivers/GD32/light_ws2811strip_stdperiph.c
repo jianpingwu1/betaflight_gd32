@@ -53,7 +53,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
     static uint32_t counter = 0;
 #endif
 
-    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_FTF)) {   
+    if (DMA_GET_FLAG_STATUS(descriptor, DMA_INT_FLAG_FTF)) {
 #if defined(USE_WS2811_SINGLE_COLOUR)
         counter++;
         if (counter == WS2811_LED_STRIP_LENGTH) {
@@ -69,7 +69,7 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
         xDMA_Cmd(descriptor->ref, DISABLE);
 #endif
 
-        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);  
+        DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);
     }
 }
 
@@ -119,6 +119,8 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     RCC_ClockCmd(timerRCC(timer), ENABLE);
 
+    timer_deinit((uint32_t)timer);
+
     // Stop timer
     timer_disable((uint32_t)timer);
 
@@ -129,7 +131,7 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     BIT_COMPARE_1 = period / 3 * 2;
     BIT_COMPARE_0 = period / 3;
 
-    
+
     /* Time base configuration */
     timer_struct_para_init(&timer_initpara);
     timer_initpara.period            = period;     // 800kHz
@@ -202,9 +204,9 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 #endif
 
 #if defined(USE_WS2811_SINGLE_COLOUR)
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE; 
+    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
 #else
-    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE; 
+    dma_init_struct.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
 #endif
 
     xDMA_Init(dmaRef, &dma_init_struct);
