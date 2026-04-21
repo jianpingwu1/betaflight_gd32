@@ -94,7 +94,7 @@ static uint8_t lookupTimerIndex(const TIM_TypeDef *tim) // TIM_TypeDef只有
     switch ((unsigned)tim >> _CASE_SHF) {
 #if USED_TIMERS & TIM_N(0)
         _CASE(0);
-#endif        
+#endif
 #if USED_TIMERS & TIM_N(1)
         _CASE(1);
 #endif
@@ -264,10 +264,11 @@ const int8_t timerNumbers[USED_TIMER_COUNT] = {
 #undef _DEF
 };
 
-int8_t timerGetNumberByIndex(uint8_t index) 
+int8_t timerGetNumberByIndex(uint8_t index)
 {
     if (index < USED_TIMER_COUNT) {
-        return timerNumbers[index];
+        /* showTimers() use Timer numbers are 1-based, so add 1 to the index */
+        return timerNumbers[index] + 1;
     } else {
         return 0;
     }
@@ -287,7 +288,7 @@ int8_t timerGetTIMNumber(const TIM_TypeDef *tim)
 
 static inline uint8_t lookupChannelIndex(const uint16_t channel)
 {
-    return channel;    
+    return channel;
 }
 
 uint8_t timerLookupChannelIndex(const uint16_t channel)
@@ -482,13 +483,13 @@ void timerChConfigCallbacksDual(const timerHardware_t *timHw, timerCCHandlerRec_
 
     // enable channel IRQs
     if (edgeCallbackLo) {
-        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo)); 
-        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo)); 
+        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo));
+        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chLo));
     }
 
     if (edgeCallbackHi) {
-        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi)); 
-        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi));        
+        timer_flag_clear((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi));
+        timer_interrupt_enable((uint32_t)(timHw->tim), TIMER_INT_CHx(chHi));
     }
 
     timerChConfig_UpdateOverflow(&timerConfig[timerIndex], timHw->tim);
@@ -556,7 +557,7 @@ void timerChConfigIC(const timerHardware_t *timHw, bool polarityRising, unsigned
     timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
     timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
     timer_icinitpara.icfilter    = getFilter(inputFilterTicks);
-    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara); 
+    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara);
 }
 
 // configure dual channel input channel for capture
@@ -573,7 +574,7 @@ void timerChConfigICDual(const timerHardware_t *timHw, bool polarityRising, unsi
     timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
     timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
     timer_icinitpara.icfilter    = getFilter(inputFilterTicks);
-    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara); 
+    timer_input_capture_config((uint32_t)(timHw->tim), timHw->channel, &timer_icinitpara);
     // configure indirect channel
     timer_icinitpara.icpolarity  = directRising ? TIMER_IC_POLARITY_FALLING : TIMER_IC_POLARITY_RISING;
     timer_icinitpara.icselection = TIMER_IC_SELECTION_INDIRECTTI;
@@ -608,7 +609,7 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
     timer_oc_parameter_struct timer_ocintpara;
     timer_channel_output_struct_para_init(&timer_ocintpara);
 
-    uint16_t ocmode; 
+    uint16_t ocmode;
     if (outEnable) {
         ocmode = TIMER_OC_MODE_INACTIVE;
         timer_ocintpara.outputstate = TIMER_CCX_ENABLE;
@@ -618,11 +619,11 @@ void timerChConfigOC(const timerHardware_t* timHw, bool outEnable, bool stateHig
         }
         timer_ocintpara.ocpolarity  = stateHigh ? TIMER_OC_POLARITY_HIGH : TIMER_OC_POLARITY_LOW;
     } else {
-        ocmode = TIMER_OC_MODE_TIMING;   
+        ocmode = TIMER_OC_MODE_TIMING;
     }
 
     timer_channel_output_config((uint32_t)(timHw->tim), timHw->channel, &timer_ocintpara);
-    timer_channel_output_mode_config((uint32_t)(timHw->tim), timHw->channel, ocmode); 
+    timer_channel_output_mode_config((uint32_t)(timHw->tim), timHw->channel, ocmode);
     timer_channel_output_shadow_config((uint32_t)(timHw->tim), timHw->channel, TIMER_OC_SHADOW_DISABLE);
 }
 
