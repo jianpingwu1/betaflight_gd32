@@ -525,20 +525,15 @@ void uartIrqHandler(uartPort_t *s)
         }
     }
 
-    if (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_ERR_ORERR) == SET) {
-        usart_interrupt_flag_clear((uint32_t)s->USARTx, USART_INT_FLAG_ERR_ORERR);
+    if (usart_flag_get((uint32_t)s->USARTx, USART_FLAG_ORERR) == SET) {
+        usart_flag_clear((uint32_t)s->USARTx, USART_FLAG_ORERR);
     }
 
     if (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_IDLE) == SET) {
         if (s->port.idleCallback) {
             s->port.idleCallback();
         }
-#if defined(GD32H7)
         usart_interrupt_flag_clear((uint32_t)s->USARTx, USART_INT_FLAG_IDLE);
-#else
-        USART_STAT0((uint32_t)s->USARTx);
-        USART_DATA((uint32_t)s->USARTx);
-#endif
     }
 
 }
