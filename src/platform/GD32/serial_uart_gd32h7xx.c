@@ -387,7 +387,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
             { DEFIO_TAG_E(PB4),  GPIO_AF_11 },
             { DEFIO_TAG_E(PE8),  GPIO_AF_7 },
             { DEFIO_TAG_E(PF7),  GPIO_AF_7 },
-        },  
+        },
 #endif // GD32H7
         .rcc = RCC_APB1(UART6),
         .irqn = UART6_IRQn,
@@ -416,7 +416,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
         },
         .txPins = {
             { DEFIO_TAG_E(PE1),  GPIO_AF_8 },
-        },  
+        },
 #endif // GD32H7
         .rcc = RCC_APB1(UART7),
         .irqn = UART7_IRQn,
@@ -438,10 +438,9 @@ bool checkUsartTxOutput(uartPort_t *s)
     if ((uart->txPinState == TX_PIN_MONITOR) && txIO) {
         if (IORead(txIO)) {
             uart->txPinState = TX_PIN_ACTIVE;
-#if defined(GD32H7)
-#else
-            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->hardware->af);
-#endif
+
+            IOConfigGPIOAF(txIO, IOCFG_AF_PP, uart->tx.af);
+
             usart_transmit_config((uint32_t)s->USARTx, USART_TRANSMIT_ENABLE);
 
             return true;
@@ -484,18 +483,18 @@ void uartDmaIrqHandler(dmaChannelDescriptor_t* descriptor)
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FTF)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FTF);
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_HTF);
-        
+
         if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE)) {
             dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_FEE);
         }
-        
+
         handleUsartTxDma(s);
     }
-    
+
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_TAE)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_TAE);
     }
-    
+
     if (dma_interrupt_flag_get((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_SDE)) {
         dma_interrupt_flag_clear((uint32_t)descriptor->dma, descriptor->stream, DMA_INT_FLAG_SDE);
     }
