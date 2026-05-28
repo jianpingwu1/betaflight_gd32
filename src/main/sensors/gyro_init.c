@@ -49,6 +49,7 @@
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
+#include "drivers/accgyro/accgyro_spi_sh5001.h"
 
 #include "drivers/accgyro/accgyro_spi_l3gd20.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
@@ -312,6 +313,7 @@ void gyroInitSensor(gyroSensor_t *gyroSensor, const gyroDeviceConfig_t *config)
     case GYRO_LSM6DSO:
     case GYRO_LSM6DSV16X:
     case GYRO_ICM42688P:
+    case GYRO_SH5001:
     case GYRO_IIM42652:
     case GYRO_IIM42653:
     case GYRO_ICM42605:
@@ -452,6 +454,15 @@ STATIC_UNIT_TESTED gyroHardware_e gyroDetect(gyroDev_t *dev)
                 gyroHardware = GYRO_NONE;
                 break;
             }
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_GYRO_SPI_SH5001
+    case GYRO_SH5001:
+        if (sh5001SpiGyroDetect(dev)) {
+            gyroHardware = GYRO_SH5001;
             break;
         }
         FALLTHROUGH;

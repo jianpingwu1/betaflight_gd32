@@ -45,6 +45,7 @@
 #define ICM20689_WHO_AM_I_CONST             (0x98)
 #define ICM42605_WHO_AM_I_CONST             (0x42)
 #define ICM42688P_WHO_AM_I_CONST            (0x47)
+#define SH5001_WHO_AM_I_CONST               (0xA1)
 #define ICM45686_WHO_AM_I_CONST             (0xE9)
 #define ICM45605_WHO_AM_I_CONST             (0xE5)
 #define IIM42652_WHO_AM_I_CONST             (0x6F)
@@ -208,6 +209,7 @@ typedef enum {
     ICM_20689_SPI,
     ICM_42605_SPI,
     ICM_42688P_SPI,
+    SH5001_SPI,
     IIM_42652_SPI,
     IIM_42653_SPI,
     BMI_160_SPI,
