@@ -28,7 +28,7 @@
 
 #include "platform.h"
 
-#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P)
+#if defined(USE_GYRO_SPI_ICM42605) || defined(USE_GYRO_SPI_ICM42688P) || defined(USE_GYRO_SPI_ICM42622P)
 
 #include "common/axis.h"
 #include "common/utils.h"
@@ -87,7 +87,7 @@
 #define ICM426XX_RA_ACCEL_CONFIG_STATIC4            0x05  // User Bank 2
 // --- Register & setting for gyro and acc UI Filter --------
 #define ICM426XX_RA_GYRO_ACCEL_CONFIG0              0x52  // User Bank 0
-#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4) 
+#define ICM426XX_ACCEL_UI_FILT_BW_LOW_LATENCY       (15 << 4)
 #define ICM426XX_GYRO_UI_FILT_BW_LOW_LATENCY        (15 << 0)
 // ----------------------------------------------------------
 
@@ -184,6 +184,9 @@ uint8_t icm426xxSpiDetect(const extDevice_t *dev)
         case ICM42688P_WHO_AM_I_CONST:
             icmDetected = ICM_42688P_SPI;
             break;
+        case ICM42622P_WHO_AM_I_CONST:
+            icmDetected = ICM_42622P_SPI;
+            break;
         default:
             icmDetected = MPU_NONE;
             break;
@@ -210,6 +213,8 @@ bool icm426xxSpiAccDetect(accDev_t *acc)
     case ICM_42605_SPI:
         break;
     case ICM_42688P_SPI:
+        break;
+    case ICM_42622P_SPI:
         break;
     default:
         return false;
@@ -323,6 +328,8 @@ bool icm426xxSpiGyroDetect(gyroDev_t *gyro)
         break;
     case ICM_42688P_SPI:
         break;
+    case ICM_42622P_SPI:
+        break;
     default:
         return false;
     }
@@ -351,6 +358,7 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
         }
 
     case ICM_42688P_SPI:
+    case ICM_42622P_SPI:
     default:
         switch (config) {
         case GYRO_HARDWARE_LPF_NORMAL:
@@ -369,4 +377,4 @@ static aafConfig_t getGyroAafConfig(const mpuSensor_e gyroModel, const aafConfig
     }
 }
 
-#endif // USE_GYRO_SPI_ICM42605 || USE_GYRO_SPI_ICM42688P
+#endif // USE_GYRO_SPI_ICM42605 || USE_GYRO_SPI_ICM42688P || USE_GYRO_SPI_ICM42622P
