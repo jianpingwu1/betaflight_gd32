@@ -41,7 +41,7 @@
 
 #define NUM_QUEUE_SEGS 5
 
-#if !defined(STM32G4) && !defined(STM32H7) && !defined(AT32F435)
+#if !defined(STM32G4) && !defined(STM32H7) && !defined(AT32F435) && !defined(GD32H7)
 #define USE_TX_IRQ_HANDLER
 #endif
 
@@ -52,6 +52,12 @@ busDevice_t spiBusDevice[SPIDEV_COUNT];
 
 SPIDevice spiDeviceByInstance(SPI_TypeDef *instance)
 {
+#ifdef USE_SPI_DEVICE_0
+    if (instance == SPI0) {
+        return SPIDEV_0;
+    }
+#endif
+
 #ifdef USE_SPI_DEVICE_1
     if (instance == SPI1) {
         return SPIDEV_1;
@@ -106,6 +112,15 @@ bool spiInit(SPIDevice device)
     case SPIINVALID:
         return false;
 
+#if defined(USE_GDBSP_DRIVER)
+    case SPIDEV_0:
+#ifdef USE_SPI_DEVICE_0
+        spiInitDevice(device);
+        return true;
+#else
+        break;
+#endif
+#endif
     case SPIDEV_1:
 #ifdef USE_SPI_DEVICE_1
         spiInitDevice(device);
@@ -370,6 +385,18 @@ uint16_t spiCalculateDivider(uint32_t freq)
     }
 
     uint32_t spiClk = system_core_clock / 2;
+#elif defined(GD32F4)
+    if(freq > 30000000){
+        freq = 30000000;
+    }
+
+    uint32_t spiClk = SystemCoreClock / 2;
+#elif defined(GD32H7)
+    if (freq > 100000000){
+        freq = 100000000;
+    }
+
+    uint32_t spiClk = SystemCoreClock / 2;
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -396,6 +423,18 @@ uint32_t spiCalculateClock(uint16_t spiClkDivisor)
         return 36000000;
     }
 
+#elif defined(GD32F4)
+    uint32_t spiClk = SystemCoreClock / 2;
+
+    if ((spiClk / spiClkDivisor) > 30000000){
+        return 30000000;
+    }
+#elif defined(GD32H7)
+    uint32_t spiClk = SystemCoreClock / 4;
+
+    if((spiClk / spiClkDivisor) > 100000000){
+        return 100000000;
+    }
 #else
 #error "Base SPI clock not defined for this architecture"
 #endif
@@ -581,6 +620,8 @@ void spiInitBusDMA(void)
      * is enabled, then don't enable DMA on an SPI bus using DMA2
      */
     const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
+#elif defined(GD32F4) && defined(USE_DSHOT_BITBANG)
+    const bool dshotBitbangActive = isDshotBitbangActive(&motorConfig()->dev);
 #endif
 
     for (device = 0; device < SPIDEV_COUNT; device++) {
@@ -613,13 +654,18 @@ void spiInitBusDMA(void)
                     dmaTxIdentifier = DMA_NONE;
                     break;
                 }
+#elif defined(GD32F4) && defined(USE_DSHOT_BITBANG)
+                if (dshotBitbangActive && (DMA_DEVICE_NO(dmaTxIdentifier) == 1)) {
+                    dmaTxIdentifier = DMA_NONE;
+                    break;
+                }
 #endif
                 if (!dmaAllocate(dmaTxIdentifier, OWNER_SPI_SDO, device + 1)) {
                     dmaTxIdentifier = DMA_NONE;
                     continue;
                 }
                 bus->dmaTx = dmaGetDescriptorByIdentifier(dmaTxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(GD32F4) || defined(GD32H7)
                 bus->dmaTx->stream = DMA_DEVICE_INDEX(dmaTxIdentifier);
                 bus->dmaTx->channel = dmaTxChannelSpec->channel;
 #endif
@@ -651,13 +697,18 @@ void spiInitBusDMA(void)
                     dmaRxIdentifier = DMA_NONE;
                     break;
                 }
+#elif defined(GD32F4) && defined(USE_DSHOT_BITBANG)
+                if (dshotBitbangActive && (DMA_DEVICE_NO(dmaRxIdentifier) == 1)) {
+                    dmaRxIdentifier = DMA_NONE;
+                    break;
+                }
 #endif
                 if (!dmaAllocate(dmaRxIdentifier, OWNER_SPI_SDI, device + 1)) {
                     dmaRxIdentifier = DMA_NONE;
                     continue;
                 }
                 bus->dmaRx = dmaGetDescriptorByIdentifier(dmaRxIdentifier);
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(GD32F4) || defined(GD32H7)
                 bus->dmaRx->stream = DMA_DEVICE_INDEX(dmaRxIdentifier);
                 bus->dmaRx->channel = dmaRxChannelSpec->channel;
 #endif

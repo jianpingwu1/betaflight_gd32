@@ -93,9 +93,21 @@ typedef struct serialPort_s {
     uint8_t identifier;
 } serialPort_t;
 
+#if defined(USE_GDBSP_DRIVER)
+#if defined(USE_UART0)
+#define SERIAL_PORT_MAX_INDEX 12
+#define SERIAL_UART_COUNT 11
+#define SERIAL_LPUART_COUNT 1
+#else
 #define SERIAL_PORT_MAX_INDEX 11
 #define SERIAL_UART_COUNT 10
 #define SERIAL_LPUART_COUNT 1
+#endif
+#else
+#define SERIAL_PORT_MAX_INDEX 11
+#define SERIAL_UART_COUNT 10
+#define SERIAL_LPUART_COUNT 1
+#endif
 
 typedef struct serialPinConfig_s {
     ioTag_t ioTagTx[SERIAL_PORT_MAX_INDEX];

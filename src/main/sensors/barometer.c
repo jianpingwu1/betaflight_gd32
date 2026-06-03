@@ -45,6 +45,7 @@
 #include "drivers/barometer/barometer_lps.h"
 #include "drivers/barometer/barometer_2smpb_02b.h"
 #include "drivers/barometer/barometer_lps22df.h"
+#include "drivers/barometer/barometer_gdy112x.h"
 #include "drivers/bus.h"
 #include "drivers/bus_i2c_busdev.h"
 #include "drivers/bus_spi.h"
@@ -315,6 +316,15 @@ static bool baroDetect(baroDev_t *baroDev, baroSensor_e baroHardwareToUse)
 #if defined(USE_BARO_LPS22DF) || defined(USE_BARO_SPI_LPS22DF)
         if (lps22dfDetect(baroDev)) {
             baroHardware = BARO_LPS22DF;
+            break;
+        }
+#endif
+        FALLTHROUGH;
+
+     case BARO_GDY112X:
+#if defined(USE_BARO_GDY112X) || defined(USE_BARO_SPI_GDY112X)
+        if (baroGDY112XDetect(baroDev)) {
+            baroHardware = BARO_GDY112X;
             break;
         }
 #endif

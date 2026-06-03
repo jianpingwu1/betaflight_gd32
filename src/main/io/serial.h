@@ -82,7 +82,12 @@ extern const uint32_t baudRates[];
 typedef enum {
     SERIAL_PORT_ALL = -2,
     SERIAL_PORT_NONE = -1,
+#if defined(USE_UART0)
+    SERIAL_PORT_USART0 = 0,
+    SERIAL_PORT_USART1,
+#else
     SERIAL_PORT_USART1 = 0,
+#endif
     SERIAL_PORT_USART2,
     SERIAL_PORT_USART3,
     SERIAL_PORT_UART4,
@@ -111,6 +116,14 @@ extern const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT];
 #define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) \
     (((x) <= SERIAL_PORT_USART_MAX) ? ((x) - SERIAL_PORT_USART1 + UARTDEV_1) : ((x) - SERIAL_PORT_LPUART1) + LPUARTDEV_1)
 
+#elif defined(USE_GDBSP_DRIVER)
+#if defined(USE_UART0)
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_USART0)
+#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART0 + UARTDEV_0)
+#else
+#define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_USART1)
+#define SERIAL_PORT_IDENTIFIER_TO_UARTDEV(x) ((x) - SERIAL_PORT_USART1 + UARTDEV_1)
+#endif
 #else
 
 #define SERIAL_PORT_IDENTIFIER_TO_INDEX(x) ((x) - SERIAL_PORT_USART1)

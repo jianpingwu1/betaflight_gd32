@@ -59,6 +59,10 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 {
     pSerialPinConfig = serialPinConfigToUse;
 
+#ifdef USE_UART0
+    initInverter(SERIAL_PORT_USART0);
+#endif
+
 #ifdef USE_UART1
     initInverter(SERIAL_PORT_USART1);
 #endif
@@ -84,6 +88,125 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 #endif
 }
 
+#if defined(USE_GDBSP_DRIVER)
+// #if defined(GD32H7)
+void enableInverter(USART_TypeDef *USARTx, bool on)
+{
+    int identifier = SERIAL_PORT_NONE;
+
+#ifdef USE_UART0
+    if (USARTx == (void *)USART0) {
+        identifier = SERIAL_PORT_USART0;
+    }
+#endif
+
+#ifdef USE_UART1
+    if (USARTx == (void *)USART1) {
+        identifier = SERIAL_PORT_USART1;
+    }
+#endif
+
+#ifdef USE_UART2
+    if (USARTx == (void *)USART2) {
+        identifier = SERIAL_PORT_USART2;
+    }
+#endif
+
+#ifdef USE_UART3
+    if (USARTx == (void *)UART3) {
+        identifier = SERIAL_PORT_USART3;
+    }
+#endif
+
+#ifdef USE_UART4
+    if (USARTx == (void *)UART4) {
+        identifier = SERIAL_PORT_UART4;
+    }
+#endif
+
+#ifdef USE_UART5
+    if (USARTx == (void *)USART5) {
+        identifier = SERIAL_PORT_UART5;
+    }
+#endif
+
+#ifdef USE_UART6
+    if (USARTx == (void *)UART6) {
+        identifier = SERIAL_PORT_USART6;
+    }
+#endif
+
+#ifdef USE_UART7
+    if (USARTx == (void *)UART7) {
+        identifier = SERIAL_PORT_USART7;
+    }
+#endif
+
+    if (identifier != SERIAL_PORT_NONE) {
+        inverterSet(identifier, on);
+    }
+}
+
+// #elif defined(GD32F4)
+
+// void enableInverter(USART_TypeDef *USARTx, bool on)
+// {
+//     int identifier = SERIAL_PORT_NONE;
+
+// #ifdef USE_UART1
+//     if (USARTx == (void *)USART0) {
+//         identifier = SERIAL_PORT_USART1;
+//     }
+// #endif
+
+// #ifdef USE_UART2
+//     if (USARTx == (void *)USART1) {
+//         identifier = SERIAL_PORT_USART2;
+//     }
+// #endif
+
+// #ifdef USE_UART3
+//     if (USARTx == (void *)USART2) {
+//         identifier = SERIAL_PORT_USART3;
+//     }
+// #endif
+
+// #ifdef USE_UART4
+//     if (USARTx == (void *)UART3) {
+//         identifier = SERIAL_PORT_UART4;
+//     }
+// #endif
+
+// #ifdef USE_UART5
+//     if (USARTx == (void *)UART4) {
+//         identifier = SERIAL_PORT_UART5;
+//     }
+// #endif
+
+// #ifdef USE_UART6
+//     if (USARTx == (void *)USART5) {
+//         identifier = SERIAL_PORT_USART6;
+//     }
+// #endif
+
+// #ifdef USE_UART7
+//     if (USARTx == (void *)UART6) {
+//         identifier = SERIAL_PORT_USART7;
+//     }
+// #endif
+
+// #ifdef USE_UART8
+//     if (USARTx == (void *)UART7) {
+//         identifier = SERIAL_PORT_USART8;
+//     }
+// #endif
+
+//     if (identifier != SERIAL_PORT_NONE) {
+//         inverterSet(identifier, on);
+//     }
+// }
+
+#else
 void enableInverter(USART_TypeDef *USARTx, bool on)
 {
     int identifier = SERIAL_PORT_NONE;
@@ -128,4 +251,5 @@ void enableInverter(USART_TypeDef *USARTx, bool on)
         inverterSet(identifier, on);
     }
 }
+#endif
 #endif // USE_INVERTER

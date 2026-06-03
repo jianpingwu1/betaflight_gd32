@@ -56,7 +56,8 @@
 #define FAST_CODE_PREF              FAST_CODE
 #endif
 
-#define FAST_CODE_NOINLINE          NOINLINE
+// #define FAST_CODE_NOINLINE          NOINLINE
+#define FAST_CODE_NOINLINE          __attribute__((section(".tcm_code"))) NOINLINE
 
 #else
 #define FAST_CODE

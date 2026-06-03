@@ -445,7 +445,11 @@ void gpsInit(void)
     }
 #endif
 
+#if defined(USE_GDBSP_DRIVER)
+    if ((gpsPortConfig->identifier >= SERIAL_PORT_USART0) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
+#else
     if ((gpsPortConfig->identifier >= SERIAL_PORT_USART1) && (gpsPortConfig->identifier <= SERIAL_PORT_USART_MAX)){
+#endif
         options |= SERIAL_CHECK_TX;
     }
 

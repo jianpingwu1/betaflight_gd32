@@ -201,7 +201,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
     }
 
 #ifdef USE_DMA_SPEC
-#if !defined(STM32H7) // H7 uses IDMA
+#if !defined(STM32H7) && !defined(GD32H7)  // H7 uses IDMA
     const dmaChannelSpec_t *dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_SDIO, 0, sdioConfig()->dmaopt);
 
     if (!dmaChannelSpec) {
@@ -223,7 +223,7 @@ static void sdcardSdio_init(const sdcardConfig_t *config, const spiPinConfig_t *
         sdcard.useCache = 0;
     }
 #ifdef USE_DMA_SPEC
-#if defined(STM32H7) // H7 uses IDMA
+#if defined(STM32H7)  || defined(GD32H7) // H7 uses IDMA
     SD_Initialize_LL(0);
 #else
     SD_Initialize_LL((DMA_ARCH_TYPE *)dmaChannelSpec->ref);

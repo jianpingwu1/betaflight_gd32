@@ -82,11 +82,11 @@ uint8_t getTimerIndex(TIM_TypeDef *timer)
 
 /**
  * Prepare to send dshot data for one motor
- * 
+ *
  * Formats the value into the appropriate dma buffer and enables the dma channel.
  * The packet won't start transmitting until later since the dma requests from the timer
  * are disabled when this function is called.
- * 
+ *
  * @param index index of the motor that the data is to be sent to
  * @param value the dshot value to be sent
 */
@@ -197,7 +197,7 @@ static uint32_t decodeTelemetryPacket(uint32_t buffer[], uint32_t count)
 #ifdef USE_DSHOT_TELEMETRY
 /**
  * Process dshot telemetry packets before switching the channels back to outputs
- * 
+ *
 */
 FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
 {
@@ -226,6 +226,8 @@ FAST_CODE_NOINLINE bool pwmTelemetryDecode(void)
             LL_EX_TIM_DisableIT(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #elif defined(AT32F435)
             tmr_dma_request_enable(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, FALSE);
+#elif defined(USE_GDBSP_DRIVER)
+            timer_dma_disable((uint32_t)dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource);
 #else
             TIM_DMACmd(dmaMotors[i].timerHardware->tim, dmaMotors[i].timerDmaSource, DISABLE);
 #endif
