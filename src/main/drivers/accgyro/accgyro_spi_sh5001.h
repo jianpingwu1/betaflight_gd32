@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -154,10 +155,11 @@
 // INT_CONF (0x42) bits
 #define SH5001_INT_ACTIVE_HIGH      0x00   // bit7=0: active high
 #define SH5001_INT_ACTIVE_LOW       0x80   // bit7=1: active low
-#define SH5001_INT_NO_LATCH         0x40   // bit6=1: no latch (pulsed)
-#define SH5001_INT1_PUSHPULL        0x00   // bit3=0: push-pull
-#define SH5001_INT1_OPENDRAIN       0x08   // bit3=1: open-drain
-#define SH5001_INT1_OUTPUT_EN       0x04   // bit2=1: INT1 output enable
+#define SH5001_INT1_AUTO_CLEAR      0x40   // bit6=1: INT1 auto clear (pulsed)
+#define SH5001_INT_CLEAR_ANY_READ   0x10   // bit4=1: clear interrupt status by any register read
+#define SH5001_INT1_PUSHPULL        0x01   // bit[1:0]=01: INT1 push-pull
+#define SH5001_INT1_OPENDRAIN       0x02   // bit[1:0]=10: INT1 open-drain
+#define SH5001_INT2_NO_OUTPUT       0x00   // bit[3:2]=00: INT2 no output
 
 // INT_ENABLE1 (0x41) bits
 #define SH5001_GYRO_DRDY_INT_EN     0x04   // bit2: gyro data ready interrupt enable

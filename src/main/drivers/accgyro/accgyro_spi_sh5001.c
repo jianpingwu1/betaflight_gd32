@@ -1,19 +1,20 @@
 /*
- * This file is part of Cleanflight and Betaflight.
+ * This file is part of Betaflight.
  *
- * Cleanflight and Betaflight are free software. You can redistribute
- * this software and/or modify this software under the terms of the
- * GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * Betaflight is free software. You can redistribute this software
+ * and/or modify this software under the terms of the GNU General
+ * Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later
+ * version.
  *
- * Cleanflight and Betaflight are distributed in the hope that they
- * will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Betaflight is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
  * See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.
+ * You should have received a copy of the GNU General Public
+ * License along with this software.
  *
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -106,6 +107,12 @@ static void sh5001WriteRegMasked(const extDevice_t *dev, uint8_t reg, uint8_t pr
 static void sh5001SetRegBits(const extDevice_t *dev, uint8_t reg, uint8_t bits)
 {
     const uint8_t regData = spiReadRegMsk(dev, reg) | bits;
+    spiWriteReg(dev, reg, regData);
+}
+
+static void sh5001ClearRegBits(const extDevice_t *dev, uint8_t reg, uint8_t bits)
+{
+    const uint8_t regData = spiReadRegMsk(dev, reg) & ~bits;
     spiWriteReg(dev, reg, regData);
 }
 
@@ -282,12 +289,12 @@ void sh5001GyroInit(gyroDev_t *gyro)
     // Enable dead-zone dither (improves noise performance)
     sh5001DeadZoneDither(dev);
 
-    // Configure interrupt: active high, no latch (pulsed), INT1 push-pull output
-    spiWriteReg(dev, SH5001_RA_INT_CONF, SH5001_INT_ACTIVE_HIGH | SH5001_INT_NO_LATCH | SH5001_INT1_PUSHPULL | SH5001_INT1_OUTPUT_EN);
+    // Configure INT1 as active high, auto-clear (pulsed), push-pull output; clear DRDY on data reads.
+    spiWriteReg(dev, SH5001_RA_INT_CONF, SH5001_INT_ACTIVE_HIGH | SH5001_INT1_AUTO_CLEAR | SH5001_INT_CLEAR_ANY_READ | SH5001_INT1_PUSHPULL | SH5001_INT2_NO_OUTPUT);
 
-    // Enable gyro data ready interrupt and map it to INT1 without clearing other interrupt bits.
+    // Enable gyro data ready interrupt and map it to INT1 without disturbing other interrupt bits.
     sh5001SetRegBits(dev, SH5001_RA_INT_ENABLE1, SH5001_GYRO_DRDY_INT_EN);
-    sh5001SetRegBits(dev, SH5001_RA_INT_PIN_MAP1, SH5001_GYRO_DRDY_INT_EN);
+    sh5001ClearRegBits(dev, SH5001_RA_INT_PIN_MAP1, SH5001_GYRO_DRDY_INT_EN);
 }
 
 // Gyro data read function (no byte-swap needed - SH5001 data is little-endian)
