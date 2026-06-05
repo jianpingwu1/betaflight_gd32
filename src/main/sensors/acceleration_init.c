@@ -49,6 +49,7 @@
 #include "drivers/accgyro/accgyro_spi_icm426xx.h"
 #include "drivers/accgyro/accgyro_spi_icm456xx.h"
 #include "drivers/accgyro/accgyro_spi_icm40609.h"
+#include "drivers/accgyro/accgyro_spi_sh5001.h"
 
 #include "drivers/accgyro/accgyro_spi_lsm6dso.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
@@ -241,6 +242,15 @@ retry:
                 accHardware = ACC_NONE;
                 break;
             }
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACC_SPI_SH5001
+    case ACC_SH5001:
+        if (sh5001SpiAccDetect(dev)) {
+            accHardware = ACC_SH5001;
             break;
         }
         FALLTHROUGH;
