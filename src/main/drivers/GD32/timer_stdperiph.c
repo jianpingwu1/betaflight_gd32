@@ -962,9 +962,13 @@ void timerSetCounter(TIM_TypeDef *timer, uint32_t counter)
     TIMER_CNT((uint32_t)timer) = counter;
 }
 
-void timerDisable(TIM_TypeDef *timer)
+void timerDisableUpdateInterrupt(TIM_TypeDef *timer)
 {
     timer_interrupt_disable((uint32_t)timer, TIMER_INT_UP);
+}
+
+void timerDisable(TIM_TypeDef *timer)
+{
     timer_disable((uint32_t)timer);
 }
 

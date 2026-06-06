@@ -101,8 +101,15 @@ void expressLrsUpdateTimerInterval(uint16_t intervalUs)
     timerState.intervalUs = intervalUs;
     expressLrsRecalculatePhaseShiftLimits();
 
+#ifdef USE_HAL_DRIVER
     timerReconfigureTimeBase(timer, expressLrsCalculateMaximumExpectedPeriod(timerState.intervalUs), MHZ_TO_HZ(1));
+    LL_TIM_SetAutoReload(timer, (timerState.intervalUs / TICK_TOCK_COUNT) - 1);
+#elif defined(USE_GD_BSP_DRIVER)
     timerSetPeriod(timer, (timerState.intervalUs / TICK_TOCK_COUNT) - 1);
+#else
+    configTimeBase(timer, expressLrsCalculateMaximumExpectedPeriod(timerState.intervalUs), MHZ_TO_HZ(1));
+    TIM_SetAutoreload(timer, (timerState.intervalUs / TICK_TOCK_COUNT) - 1);
+#endif
 }
 
 void expressLrsUpdatePhaseShift(int32_t newPhaseShift)
@@ -135,7 +142,13 @@ static void expressLrsOnTimerUpdate(timerOvrHandlerRec_t *cbRec, captureCompare_
 
         uint32_t adjustedPeriod = (timerState.intervalUs / TICK_TOCK_COUNT) + timerState.frequencyOffsetTicks;
 
+#ifdef USE_HAL_DRIVER
+        LL_TIM_SetAutoReload(timer, adjustedPeriod - 1);
+#elif defined(USE_GD_BSP_DRIVER)
         timerSetPeriod(timer, adjustedPeriod - 1);
+#else
+        TIM_SetAutoreload(timer, adjustedPeriod - 1);
+#endif
 
         expressLrsOnTimerTickISR();
 
@@ -145,7 +158,13 @@ static void expressLrsOnTimerUpdate(timerOvrHandlerRec_t *cbRec, captureCompare_
 
         uint32_t adjustedPeriod = (timerState.intervalUs / TICK_TOCK_COUNT) + timerState.phaseShiftUs + timerState.frequencyOffsetTicks;
 
+#ifdef USE_HAL_DRIVER
+        LL_TIM_SetAutoReload(timer, adjustedPeriod - 1);
+#elif defined(USE_GD_BSP_DRIVER)
         timerSetPeriod(timer, adjustedPeriod - 1);
+#else
+        TIM_SetAutoreload(timer, adjustedPeriod - 1);
+#endif
 
         timerState.phaseShiftUs = 0;
 
@@ -162,8 +181,20 @@ bool expressLrsTimerIsRunning(void)
 
 void expressLrsTimerStop(void)
 {
+#ifdef USE_HAL_DRIVER
+    LL_TIM_DisableIT_UPDATE(timer);
+    LL_TIM_DisableCounter(timer);
+    LL_TIM_SetCounter(timer, 0);
+#elif defined(USE_GD_BSP_DRIVER)
+    // timerDisableUpdateInterrupt(timer);
+    timer_interrupt_disable((uint32_t)timer, TIMER_INT_UP);
     timerDisable(timer);
     timerSetCounter(timer, 0);
+#else
+    TIM_ITConfig(timer, TIM_IT_Update, DISABLE);
+    TIM_Cmd(timer, DISABLE);
+    TIM_SetCounter(timer, 0);
+#endif
     timerState.running = false;
 }
 
@@ -171,12 +202,38 @@ void expressLrsTimerResume(void)
 {
     timerState.tickTock = TOCK;
 
+#ifdef USE_HAL_DRIVER
+    LL_TIM_SetAutoReload(timer, (timerState.intervalUs / TICK_TOCK_COUNT));
+    LL_TIM_SetCounter(timer, 0);
+
+    LL_TIM_ClearFlag_UPDATE(timer);
+    LL_TIM_EnableIT_UPDATE(timer);
+#elif defined(USE_GD_BSP_DRIVER)
     timerSetPeriod(timer, (timerState.intervalUs / TICK_TOCK_COUNT));
     timerSetCounter(timer, 0);
 
-    timerEnableInterrupt(timer);
+    timer_flag_clear((uint32_t)timer, TIMER_FLAG_UP);
+    timer_interrupt_enable((uint32_t)timer, TIMER_INT_UP);
+#else
+    TIM_SetAutoreload(timer, (timerState.intervalUs / TICK_TOCK_COUNT));
+    TIM_SetCounter(timer, 0);
+
+    TIM_ClearFlag(timer, TIM_FLAG_Update);
+    TIM_ITConfig(timer, TIM_IT_Update, ENABLE);
+#endif
+
     timerState.running = true;
+
+#ifdef USE_HAL_DRIVER
+    LL_TIM_EnableCounter(timer);
+    LL_TIM_GenerateEvent_UPDATE(timer);
+#elif defined(USE_GD_BSP_DRIVER)
     timerEnable(timer);
+    timer_event_software_generate((uint32_t)timer, TIMER_EVENT_SRC_UPG);
+#else
+    TIM_Cmd(timer, ENABLE);
+    TIM_GenerateEvent(timer, TIM_EventSource_Update);
+#endif
 }
 
 void expressLrsInitialiseTimer(TIM_TypeDef *t, timerOvrHandlerRec_t *timerUpdateCb)

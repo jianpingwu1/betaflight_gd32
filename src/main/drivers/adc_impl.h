@@ -157,23 +157,11 @@ void adcGetChannelValues(void);
 #endif // STM32F7
 
 #ifdef STM32F4
-#if 0
 // STM32F4 stdlib does not define any of these
 #define VREFINT_CAL_VREF                   (3300U)
 #define TEMPSENSOR_CAL_VREFANALOG          (3300U)
 #define TEMPSENSOR_CAL1_TEMP               ((int32_t)  30)
 #define TEMPSENSOR_CAL2_TEMP               ((int32_t) 110)
-#else
-// For GD32F4
-#define VREFINT_EXPECTED                   (1489U)  // 1.2/3.3*4095
-#define VREFINT_CAL_VREF                   (3300U)
-#define TEMPSENSOR_CAL_VREFANALOG          (3300U)
-#define TEMPSENSOR_CAL1_TEMP               ((int32_t)  25)
-// #define TEMPSENSOR_CAL2_TEMP               ((int32_t) 110)
-#define TEMPSENSOR_CAL1_V                  (1.40f)
-#define TEMPSENSOR_SLOPE                   (-4.4f) //  mV/C
-
-#endif
 #endif
 
 #ifdef AT32F435

@@ -25,7 +25,7 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
-#if defined(GD32F4)
+#if defined(USE_GDBSP_DRIVER)
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC0
 #endif
@@ -47,7 +47,7 @@
 #ifndef ADC3_DMA_STREAM
 #define ADC3_DMA_STREAM DMA2_Stream0 // ST0 or ST1
 #endif
-#elif defined(GD32F4)
+#elif defined(USE_GDBSP_DRIVER)
 #ifndef ADC0_DMA_STREAM
 #define ADC0_DMA_STREAM DMA1_CH4_BASE //CH0 or CH4
 #endif

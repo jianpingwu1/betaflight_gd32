@@ -94,7 +94,6 @@ typedef enum SPIDevice {
     SPIDEV_6
 } SPIDevice;
 
-#ifndef SPIDEV_COUNT
 #if defined(STM32F4) || defined(GD32F4)
 #define SPIDEV_COUNT 3
 #elif defined(STM32F7)
@@ -104,7 +103,6 @@ typedef enum SPIDevice {
 #else
 #define SPIDEV_COUNT 4
 #endif
-#endif // SPIDEV_COUNT
 
 // Macros to convert between CLI bus number and SPIDevice.
 #define SPI_CFG_TO_DEV(x)   ((x) - 1)

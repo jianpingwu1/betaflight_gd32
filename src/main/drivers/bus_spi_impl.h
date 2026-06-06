@@ -24,13 +24,11 @@
 
 #if defined(STM32F4) || defined(STM32G4) || defined(GD32F4)
 #define MAX_SPI_PIN_SEL 2
-#elif defined(STM32F7) || defined(AT32F4)
+#elif defined(STM32F7)
 #define MAX_SPI_PIN_SEL 4
-#elif defined(STM32H7) || defined(GD32H7)
+#elif defined(STM32H7) || defined(AT32F4) || defined(GD32H7)
 #define MAX_SPI_PIN_SEL 5
-#endif
-
-#ifndef MAX_SPI_PIN_SEL
+#else
 #error Unknown MCU family
 #endif
 
@@ -49,7 +47,7 @@ typedef struct spiHardware_s {
     spiPinDef_t sckPins[MAX_SPI_PIN_SEL];
     spiPinDef_t misoPins[MAX_SPI_PIN_SEL];
     spiPinDef_t mosiPins[MAX_SPI_PIN_SEL];
-#if !defined(STM32F7) && !defined(GD32H7)
+#ifndef STM32F7
     uint8_t af;
 #endif
     rccPeriphTag_t rcc;

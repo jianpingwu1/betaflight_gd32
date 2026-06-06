@@ -110,7 +110,7 @@ DEVICE_FLAGS += -DUSE_STDPERIPH_DRIVER
 
 
 #Flags
-ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16
+ARCH_FLAGS      = -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-sp-d16 -fsingle-precision-constant
 
 ifeq ($(TARGET_MCU),GD32H757VI)
 DEVICE_FLAGS       += -DGD32H757 -DGD32H7XXV
