@@ -47,7 +47,7 @@
 
 #include "pg/serial_uart.h"
 
-#if defined(STM32H7)
+#if defined(STM32H7) || defined(GD32H7)
 #define UART_TX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
 #define UART_RX_BUFFER_ATTRIBUTE DMA_RAM            // D2 SRAM
 #elif defined(STM32G4)
@@ -56,7 +56,7 @@
 #elif defined(STM32F7)
 #define UART_TX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
 #define UART_RX_BUFFER_ATTRIBUTE FAST_DATA_ZERO_INIT // DTCM RAM
-#elif defined(STM32F4) || defined(AT32F4)
+#elif defined(STM32F4) || defined(AT32F4) || defined(GD32F4)
 #define UART_TX_BUFFER_ATTRIBUTE                    // NONE
 #define UART_RX_BUFFER_ATTRIBUTE                    // NONE
 #else
@@ -70,6 +70,10 @@
 #define LPUART_BUFFERS(n) \
     LPUART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
     LPUART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
+
+#ifdef USE_UART0
+UART_BUFFERS(0);
+#endif
 
 #ifdef USE_UART1
 UART_BUFFERS(1);
@@ -293,6 +297,8 @@ static void uartWrite(serialPort_t *instance, uint8_t ch)
         __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
 #elif defined(USE_ATBSP_DRIVER)
         usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(USE_GDBSP_DRIVER)
+        usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
 #else
         USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
@@ -358,6 +364,8 @@ static void uartEndWrite(serialPort_t *instance)
         __HAL_UART_ENABLE_IT(&uartPort->Handle, UART_IT_TXE);
 #elif defined(USE_ATBSP_DRIVER)
         usart_interrupt_enable(uartPort->USARTx, USART_TDBE_INT, TRUE);
+#elif defined(USE_GDBSP_DRIVER)
+        usart_interrupt_enable((uint32_t)uartPort->USARTx, USART_INT_TBE);
 #else
         USART_ITConfig(uartPort->USARTx, USART_IT_TXE, ENABLE);
 #endif
@@ -395,7 +403,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
         dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_TX, device, serialUartConfig(device)->txDmaopt);
         if (dmaChannelSpec) {
             uartPort->txDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(GD32F4) || defined(GD32H7)
             uartPort->txDMAChannel = dmaChannelSpec->channel;
 #elif defined(AT32F4)
             uartPort->txDMAMuxId = dmaChannelSpec->dmaMuxId;
@@ -404,10 +412,10 @@ void uartConfigureDma(uartDevice_t *uartdev)
     }
 
     if (serialUartConfig(device)->rxDmaopt != DMA_OPT_UNUSED) {
-        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->txDmaopt);
+        dmaChannelSpec = dmaGetChannelSpecByPeripheral(DMA_PERIPH_UART_RX, device, serialUartConfig(device)->rxDmaopt);
         if (dmaChannelSpec) {
             uartPort->rxDMAResource = dmaChannelSpec->ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(GD32F4) || defined(GD32H7)
             uartPort->rxDMAChannel = dmaChannelSpec->channel;
 #elif defined(AT32F4)
             uartPort->rxDMAMuxId = dmaChannelSpec->dmaMuxId;
@@ -419,7 +427,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (hardware->rxDMAResource) {
         uartPort->rxDMAResource = hardware->rxDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(GD32F4) || defined(GD32H7)
         uartPort->rxDMAChannel = hardware->rxDMAChannel;
 #elif defined(AT32F4)
         uartPort->rxDMAMuxId = hardware->rxDMAMuxId;
@@ -428,7 +436,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
     if (hardware->txDMAResource) {
         uartPort->txDMAResource = hardware->txDMAResource;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(GD32F4) || defined(GD32H7)
         uartPort->txDMAChannel = hardware->txDMAChannel;
 #elif defined(AT32F4)
         uartPort->txDMAMuxId = hardware->txDMAMuxId;
@@ -461,12 +469,28 @@ void uartConfigureDma(uartDevice_t *uartdev)
 }
 #endif
 
+#ifdef USE_GDBSP_DRIVER
+// GDBSP driver uses IRQ handlers with different naming scheme
+#define UART_IRQHandler(type, number, dev)                      \
+    FAST_IRQ_HANDLER void CONCAT(                              \
+        _UART_GET_PREFIX(dev),                                  \
+        number ## _IRQHandler)(void)                            \
+    {                                                           \
+        uartPort_t *uartPort = &(uartDevmap[(dev)]->port);       \
+        uartIrqHandler(uartPort);                               \
+    }
+#else
 #define UART_IRQHandler(type, number, dev) \
     FAST_IRQ_HANDLER void type ## number ## _IRQHandler(void) \
     { \
         uartPort_t *uartPort = &(uartDevmap[dev]->port); \
         uartIrqHandler(uartPort); \
     }
+#endif
+
+#ifdef USE_UART0
+UART_IRQHandler(USART, 0, UARTDEV_0) // USART1 Rx/Tx IRQ Handler
+#endif
 
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
@@ -511,6 +535,5 @@ UART_IRQHandler(UART, 10, UARTDEV_10) // UART10 Rx/Tx IRQ Handler
 #ifdef USE_LPUART1
 UART_IRQHandler(LPUART, 1, LPUARTDEV_1) // LPUART1 Rx/Tx IRQ Handler
 #endif
-
 
 #endif // USE_UART

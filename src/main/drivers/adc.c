@@ -55,6 +55,37 @@ uint8_t adcChannelByTag(ioTag_t ioTag)
     return 0;
 }
 
+#if defined(USE_GDBSP_DRIVER)
+ADCDevice adcDeviceByInstance(const uint32_t instance)
+{
+    if (instance == PERIPH_INT(ADC0)) {
+        return ADCDEV_0;
+    }
+
+#if defined(ADC1)
+    if (instance == PERIPH_INT(ADC1)) {
+        return ADCDEV_1;
+    }
+#endif
+#if defined(ADC2)
+    if (instance == PERIPH_INT(ADC2)) {
+        return ADCDEV_2;
+    }
+#endif
+#if defined(ADC3)
+    if (instance == PERIPH_INT(ADC3)) {
+        return ADCDEV_3;
+    }
+#endif
+#if defined(ADC4)
+    if (instance == PERIPH_INT(ADC4)) {
+        return ADCDEV_4;
+    }
+#endif
+
+    return ADCINVALID;
+}
+#else
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 {
     if (instance == ADC1) {
@@ -84,6 +115,7 @@ ADCDevice adcDeviceByInstance(ADC_TypeDef *instance)
 
     return ADCINVALID;
 }
+#endif
 
 uint16_t adcGetChannel(uint8_t channel)
 {
@@ -132,16 +164,16 @@ int32_t adcTSSlopeK;
 
 /**
  * Use a measurement of the fixed internal vref to calculate the external Vref+
- * 
+ *
  * The ADC full range reading equates to Vref+ on the channel. Vref+ is typically
  * fed from Vcc at 3.3V, but since Vcc isn't a critical value it may be off
- * by a little due to variation in the regulator. Some chips are provided with a 
+ * by a little due to variation in the regulator. Some chips are provided with a
  * known internal voltage reference, typically around 1.2V. By measuring this
- * reference with an internally connected ADC channel we can then calculate a more 
+ * reference with an internally connected ADC channel we can then calculate a more
  * accurate value for Vref+ instead of assuming that it is 3.3V
- * 
+ *
  * @param intVRefAdcValue reading from the internal calibration voltage
- * 
+ *
  * @return the calculated value of Vref+
 */
 uint16_t adcInternalCompensateVref(uint16_t intVRefAdcValue)

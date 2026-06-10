@@ -130,6 +130,12 @@ struct {
     // BergMicro W25Q32
     // Datasheet: https://www.winbond.com/resource-files/w25q32jv%20dtr%20revf%2002242017.pdf?__locale=zh_TW
     { 0xE04016, 133, 50, 1024, 16 },
+    // GD GD25Q16
+    // Datasheet: https://www.gigadevice.com.cn/product/flash/product-series/spi-nor-flash/gd25q16c
+    { 0xC84015, 104, 80, 512, 16 },
+    // GD GD25Q128
+    // Datasheet: https://www.gigadevice.com.cn/product/flash/product-series/spi-nor-flash/gd25q128e
+    { 0xC84018, 104, 80, 4096, 16 },
     // End of list
     { 0x000000, 0, 0, 0, 0 }
 };

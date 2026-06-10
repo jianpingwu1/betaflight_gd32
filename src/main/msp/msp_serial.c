@@ -69,7 +69,11 @@ void mspSerialAllocatePorts(void)
 
         if (mspConfig()->halfDuplex) {
             options |= SERIAL_BIDIR;
+#if defined(USE_GDBSP_DRIVER)
+        } else if ((portConfig->identifier >= SERIAL_PORT_USART0) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+#else
         } else if ((portConfig->identifier >= SERIAL_PORT_USART1) && (portConfig->identifier <= SERIAL_PORT_USART_MAX)){
+#endif
             options |= SERIAL_CHECK_TX;
         }
 

@@ -88,6 +88,8 @@
 #define IOCFG_IN_FLOATING    IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE, 0,             GPIO_PULL_NONE)
 #define IOCFG_IPU_25         IO_CONFIG(GPIO_MODE_INPUT  , GPIO_DRIVE_STRENGTH_MODERATE , 0, GPIO_PULL_UP)
 
+#elif defined(GD32F4) || defined(GD32H7)
+// IO_CONFIG and IOCFG_* macros are defined in drivers/GD32/platform_mcu.h (included via platform.h)
 
 #elif defined(UNIT_TEST) || defined(SIMULATOR_BUILD)
 
@@ -103,7 +105,7 @@
 # warning "Unknown TARGET"
 #endif
 
-#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4)
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32G4) || defined(AT32F4) || defined(GD32F4) || defined(GD32H7)
 // Expose these for EXTIConfig
 #define IO_CONFIG_GET_MODE(cfg) (((cfg) >> 0) & 0x03)
 #define IO_CONFIG_GET_SPEED(cfg) (((cfg) >> 2) & 0x03)

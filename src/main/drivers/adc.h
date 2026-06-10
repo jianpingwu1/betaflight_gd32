@@ -25,8 +25,14 @@
 #include "drivers/io_types.h"
 #include "drivers/time.h"
 
+#if defined(USE_GDBSP_DRIVER)
+#ifndef ADC_INSTANCE
+#define ADC_INSTANCE                ADC0
+#endif
+#else
 #ifndef ADC_INSTANCE
 #define ADC_INSTANCE                ADC1
+#endif
 #endif
 
 #if defined(STM32F4) || defined(STM32F7)
@@ -41,8 +47,39 @@
 #ifndef ADC3_DMA_STREAM
 #define ADC3_DMA_STREAM DMA2_Stream0 // ST0 or ST1
 #endif
+#elif defined(USE_GDBSP_DRIVER)
+#ifndef ADC0_DMA_STREAM
+#define ADC0_DMA_STREAM DMA1_CH4_BASE //CH0 or CH4
 #endif
 
+#ifndef ADC1_DMA_STREAM
+#define ADC1_DMA_STREAM DMA1_CH3_BASE //CH2 or CH3
+#endif
+
+#ifndef ADC2_DMA_STREAM
+#define ADC2_DMA_STREAM DMA1_CH0_BASE //CH0 or CH1
+#endif
+#endif
+
+#if defined(USE_GDBSP_DRIVER)
+typedef enum ADCDevice {
+    ADCINVALID = -1,
+    ADCDEV_0   = 0,
+#if defined(ADC1)
+    ADCDEV_1,
+#endif
+#if defined(ADC2)
+    ADCDEV_2,
+#endif
+#if defined(ADC3)
+    ADCDEV_3,
+#endif
+#if defined(ADC4)
+    ADCDEV_4,
+#endif
+    ADCDEV_COUNT
+} ADCDevice;
+#else
 typedef enum ADCDevice {
     ADCINVALID = -1,
     ADCDEV_1   = 0,
@@ -60,6 +97,7 @@ typedef enum ADCDevice {
 #endif
     ADCDEV_COUNT
 } ADCDevice;
+#endif
 
 #define ADC_CFG_TO_DEV(x) ((x) - 1)
 #define ADC_DEV_TO_CFG(x) ((x) + 1)
@@ -69,7 +107,7 @@ typedef enum {
     ADC_CURRENT = 1,
     ADC_EXTERNAL1 = 2,
     ADC_RSSI = 3,
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32G4) || defined(GD32H7)
     // On H7 and G4, internal sensors are treated in the similar fashion as regular ADC inputs
     ADC_CHANNEL_INTERNAL_FIRST_ID = 4,
 
@@ -87,9 +125,17 @@ typedef enum {
     ADC_CHANNEL_COUNT
 } AdcChannel;
 
+#if defined(GD32H7)
+// Compatibility aliases for master project API used in adc_gd32h7xx.c
+typedef AdcChannel adcSource_e;
+typedef ADCDevice adcDevice_e;
+#define ADC_SOURCE_COUNT    ADC_CHANNEL_COUNT
+#define ADC_EXTERNAL_COUNT  ADC_CHANNEL_INTERNAL_FIRST_ID
+#endif
+
 typedef struct adcOperatingConfig_s {
     ioTag_t tag;
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(GD32H7)
     ADCDevice adcDevice;        // ADCDEV_x for this input
     uint32_t adcChannel;        // Channel number for this input. Note that H7 and G4 HAL requires this to be 32-bit encoded number.
 #else
@@ -97,7 +143,11 @@ typedef struct adcOperatingConfig_s {
 #endif
     uint8_t dmaIndex;           // index into DMA buffer in case of sparse channels
     bool enabled;
+#if defined(GD32H7)
+    uint32_t sampleTime;
+#else
     uint8_t sampleTime;
+#endif
 } adcOperatingConfig_t;
 
 struct adcConfig_s;
@@ -114,5 +164,9 @@ int16_t adcInternalComputeTemperature(uint16_t tempAdcValue, uint16_t vrefValue)
 #endif
 
 #if !defined(SIMULATOR_BUILD)
+#if defined(USE_GDBSP_DRIVER)
+ADCDevice adcDeviceByInstance(const uint32_t instance);
+#else
 ADCDevice adcDeviceByInstance(ADC_TypeDef *instance);
+#endif
 #endif

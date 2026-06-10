@@ -116,8 +116,12 @@ static void setTxSignal(softSerial_t *softSerial, uint8_t state)
 
 static void serialEnableCC(softSerial_t *softSerial)
 {
-#ifdef USE_HAL_DRIVER
+#if defined(USE_HAL_DRIVER)
     TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_ENABLE);
+#elif defined(USE_GDBSP_DRIVER)
+    timer_ic_parameter_struct ic_para;
+    ic_para.icpolarity = TIMER_IC_POLARITY_RISING;
+    timer_input_capture_config((uint32_t)softSerial->timerHardware->tim, softSerial->timerHardware->channel, &ic_para);
 #else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Enable);
 #endif
@@ -146,8 +150,11 @@ static void serialInputPortDeActivate(softSerial_t *softSerial)
 {
     // Disable input capture
 
-#ifdef USE_HAL_DRIVER
+#if defined(USE_HAL_DRIVER)
     TIM_CCxChannelCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_DISABLE);
+#elif defined(USE_GDBSP_DRIVER)
+    void gd32_timer_input_capture_config(void* timer, uint16_t channel, bool state);
+    gd32_timer_input_capture_config(softSerial->timerHardware->tim, softSerial->timerHardware->channel, DISABLE);
 #else
     TIM_CCxCmd(softSerial->timerHardware->tim, softSerial->timerHardware->channel, TIM_CCx_Disable);
 #endif
@@ -489,6 +496,8 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
 
 #ifdef USE_HAL_DRIVER
         __HAL_TIM_SetCounter(self->timerHandle, __HAL_TIM_GetAutoreload(self->timerHandle) / 2);
+#elif defined(USE_GDBSP_DRIVER)
+        timer_counter_value_config((uint32_t)self->timerHardware->tim, TIMER_CAR((uint32_t)self->timerHardware->tim) / 2);
 #else
         TIM_SetCounter(self->timerHardware->tim, self->timerHardware->tim->ARR / 2);
 #endif

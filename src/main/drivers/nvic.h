@@ -37,6 +37,9 @@
 #define NVIC_PRIO_MAG_INT_EXTI             NVIC_BUILD_PRIORITY(0x0f, 0x0f)
 #define NVIC_PRIO_WS2811_DMA               NVIC_BUILD_PRIORITY(1, 2)  // TODO - is there some reason to use high priority?
 #define NVIC_PRIO_SERIALUART_TXDMA         NVIC_BUILD_PRIORITY(1, 1)  // Highest of all SERIALUARTx_TXDMA
+#define NVIC_PRIO_SERIALUART0_TXDMA        NVIC_BUILD_PRIORITY(1, 1)
+#define NVIC_PRIO_SERIALUART0_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
+#define NVIC_PRIO_SERIALUART0              NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1_TXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1              NVIC_BUILD_PRIORITY(1, 1)
@@ -88,6 +91,11 @@
 #define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING)))))<<4)&0xf0)
 #define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING))))>>4)
 #define NVIC_PRIORITY_SUB(prio) (((prio)&((0x0f>>(7-(NVIC_PRIORITY_GROUPING)))<<4))>>4)
+#elif defined(USE_GDBSP_DRIVER)
+#define NVIC_PRIORITY_GROUPING NVIC_PRIGROUP_PRE2_SUB2
+#define NVIC_BUILD_PRIORITY(base,sub) (((((base)<<(4-(7-(NVIC_PRIORITY_GROUPING>>8))))|((sub)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8)))))<<4)&0xf0)
+#define NVIC_PRIORITY_BASE(prio) (((prio)>>(4-(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
+#define NVIC_PRIORITY_SUB(prio) (((prio)&(0x0f>>(7-(NVIC_PRIORITY_GROUPING>>8))))>>4)
 #else
 // utility macros to join/split priority
 #define NVIC_PRIORITY_GROUPING NVIC_PriorityGroup_2

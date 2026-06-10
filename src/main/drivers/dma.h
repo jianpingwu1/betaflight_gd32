@@ -25,6 +25,9 @@
 #if defined(USE_ATBSP_DRIVER)
 #include "drivers/at32/dma_atbsp.h"
 #endif
+#if defined(USE_GDBSP_DRIVER)
+#include "dma_gd32bsp.h"
+#endif
 
 #define CACHE_LINE_SIZE 32
 #define CACHE_LINE_MASK (CACHE_LINE_SIZE - 1)
@@ -55,7 +58,7 @@ typedef void (*dmaCallbackHandlerFuncPtr)(struct dmaChannelDescriptor_s *channel
 typedef struct dmaChannelDescriptor_s {
     DMA_TypeDef*                dma;
     dmaResource_t               *ref;
-#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7)
+#if defined(STM32F4) || defined(STM32F7) || defined(STM32G4) || defined(STM32H7) || defined(USE_GDBSP_DRIVER)
     uint8_t                     stream;
 #endif
     uint32_t                    channel;
@@ -74,6 +77,9 @@ typedef struct dmaChannelDescriptor_s {
 #define DMA_IDENTIFIER_TO_INDEX(x) ((x) - 1)
 
 #if defined(USE_ATBSP_DRIVER)
+
+#elif defined(USE_GDBSP_DRIVER)
+// dma_gd32bsp.h
 
 #elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
 
@@ -246,8 +252,11 @@ typedef enum {
 // Missing __HAL_DMA_SET_COUNTER in FW library V1.0.0
 #define __HAL_DMA_SET_COUNTER(__HANDLE__, __COUNTER__) ((__HANDLE__)->Instance->CNDTR = (uint16_t)(__COUNTER__))
 #elif defined(AT32F4)
-#define DMA_CCR_EN 1 
+#define DMA_CCR_EN 1
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->ctrl_bit.chen & DMA_CCR_EN)
+#elif defined(GD32F4) || defined(GD32H7)
+extern uint32_t dma_enable_status_get(uint32_t dma_chan_base);
+#define IS_DMA_ENABLED(reg) (dma_enable_status_get((uint32_t)reg))
 #else
 #define IS_DMA_ENABLED(reg) (((DMA_ARCH_TYPE *)(reg))->CCR & DMA_CCR_EN)
 #define DMAx_SetMemoryAddress(reg, address) ((DMA_ARCH_TYPE *)(reg))->CMAR = (uint32_t)&s->port.txBuffer[s->port.txBufferTail]
@@ -279,6 +288,8 @@ uint32_t dmaGetChannel(const uint8_t channel);
 #define xLL_EX_DMA_EnableIT_TC(dmaResource) LL_EX_DMA_EnableIT_TC((DMA_ARCH_TYPE *)(dmaResource))
 
 #elif defined(USE_ATBSP_DRIVER)
+
+#elif defined(USE_GDBSP_DRIVER)
 
 #else
 

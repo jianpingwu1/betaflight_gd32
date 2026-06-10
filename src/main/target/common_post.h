@@ -56,7 +56,12 @@
 #define FAST_CODE_PREF              FAST_CODE
 #endif
 
+#if defined(GD32H7)
+#define FAST_CODE_NOINLINE          __attribute__((section(".tcm_code"))) NOINLINE
+#else
 #define FAST_CODE_NOINLINE          NOINLINE
+#endif
+
 
 #else
 #define FAST_CODE

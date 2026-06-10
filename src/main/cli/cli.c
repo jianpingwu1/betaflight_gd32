@@ -279,7 +279,9 @@ static const char *mcuTypeNames[] = {
     "H723/H725",
     "G474",
     "H730",
-    "AT32F435"
+    "AT32F435",
+    "GD32F460",
+    "GD32H757"
 };
 
 static const char *configurationStates[] = {
@@ -5092,7 +5094,7 @@ const cliResourceValue_t resourceTable[] = {
 #ifdef USE_SDCARD
     DEFS( OWNER_SDCARD_DETECT, PG_SDCARD_CONFIG, sdcardConfig_t, cardDetectTag ),
 #endif
-#if defined(STM32H7) && defined(USE_SDCARD_SDIO)
+#if (defined(STM32H7) || defined(GD32H7)) && defined(USE_SDCARD_SDIO)
     DEFS( OWNER_SDIO_CK,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CKPin ),
     DEFS( OWNER_SDIO_CMD,      PG_SDIO_PIN_CONFIG, sdioPinConfig_t, CMDPin ),
     DEFS( OWNER_SDIO_D0,       PG_SDIO_PIN_CONFIG, sdioPinConfig_t, D0Pin ),
@@ -5328,7 +5330,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
     DEFS("SDIO",     DMA_PERIPH_SDIO,     PG_SDIO_CONFIG,        sdioConfig_t,       dmaopt),
     DEFW("UART_TX",  DMA_PERIPH_UART_TX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, txDmaopt, UARTDEV_CONFIG_MAX,              MASK_IGNORED),
     DEFW("UART_RX",  DMA_PERIPH_UART_RX,  PG_SERIAL_UART_CONFIG, serialUartConfig_t, rxDmaopt, UARTDEV_CONFIG_MAX,              MASK_IGNORED),
-#if defined(STM32H7) || defined(STM32G4)
+#if defined(STM32H7) || defined(STM32G4) || defined(GD32H7)
     DEFW("TIMUP",    DMA_PERIPH_TIMUP,    PG_TIMER_UP_CONFIG,    timerUpConfig_t,    dmaopt,   HARDWARE_TIMER_DEFINITION_COUNT, TIMUP_TIMERS),
 #endif
 };
@@ -5340,7 +5342,7 @@ dmaoptEntry_t dmaoptEntryTable[] = {
 #define DMA_OPT_UI_INDEX(i) ((i) + 1)
 #define DMA_OPT_STRING_BUFSIZE 5
 
-#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435)
+#if defined(STM32H7) || defined(STM32G4) || defined(AT32F435) || defined(GD32H7)
 #define DMA_CHANREQ_STRING "Request"
 #else
 #define DMA_CHANREQ_STRING "Channel"
