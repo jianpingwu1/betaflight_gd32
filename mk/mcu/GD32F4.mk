@@ -164,7 +164,7 @@ MCU_COMMON_SRC = \
             drivers/GD32/light_ws2811strip_stdperiph.c \
             drivers/GD32/persistent_gd32.c \
             drivers/GD32/rcu_gd32.c \
-            drivers/GD32/sdio_gdf4xx.c \
+            drivers/GD32/sdio_gd32f4xx.c \
             drivers/GD32/serial_uart_stdperiph.c \
             drivers/GD32/serial_uart_gd32f4xx.c \
             drivers/GD32/system_gd32f4xx.c \
