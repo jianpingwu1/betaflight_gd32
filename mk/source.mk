@@ -441,7 +441,8 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             drivers/accgyro/accgyro_spi_mpu9250.c \
             drivers/accgyro/accgyro_spi_icm20689.c \
             drivers/accgyro/accgyro_spi_icm426xx.c \
-            drivers/accgyro/accgyro_spi_lsm6dso_init.c
+            drivers/accgyro/accgyro_spi_lsm6dso_init.c \
+            drivers/accgyro/accgyro_spi_sh5001.c
 
 
 # F4 and F7 optimizations

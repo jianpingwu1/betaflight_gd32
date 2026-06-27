@@ -46,6 +46,7 @@
 #define ICM42605_WHO_AM_I_CONST             (0x42)
 #define ICM42688P_WHO_AM_I_CONST            (0x47)
 #define LSM6DSV16X_WHO_AM_I_CONST           (0x70)
+#define SH5001_WHO_AM_I_CONST               (0xA1)
 
 // RA = Register Address
 
@@ -205,7 +206,8 @@ typedef enum {
     BMI_270_SPI,
     LSM6DSO_SPI,
     L3GD20_SPI,
-    LSM6DSV16X_SPI
+    LSM6DSV16X_SPI,
+    SH5001_SPI
 } mpuSensor_e;
 
 typedef enum {

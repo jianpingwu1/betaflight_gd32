@@ -52,6 +52,7 @@
 #include "drivers/accgyro/accgyro_spi_mpu6500.h"
 #include "drivers/accgyro/accgyro_spi_mpu9250.h"
 #include "drivers/accgyro/accgyro_spi_lsm6dsv16x.h"
+#include "drivers/accgyro/accgyro_spi_sh5001.h"
 
 #ifdef USE_ACC_ADXL345
 #include "drivers/accgyro_legacy/accgyro_adxl345.h"
@@ -93,7 +94,7 @@
     !defined(USE_ACCGYRO_BMI270) && !defined(USE_ACC_SPI_ICM42605) && !defined(USE_ACC_SPI_ICM42688P) && \
     !defined(USE_ACC_ADXL345) && !defined(USE_ACC_BMA280) && !defined(USE_ACC_LSM303DLHC) && \
     !defined(USE_ACC_MMA8452) && !defined(USE_ACC_LSM303DLHC) && !defined(USE_ACCGYRO_LSM6DSV16X) && \
-	!defined(USE_VIRTUAL_ACC)
+	!defined(USE_ACC_SPI_SH5001) && !defined(USE_VIRTUAL_ACC)
 #error At least one USE_ACC device definition required
 #endif
 
@@ -334,6 +335,15 @@ retry:
     case ACC_LSM6DSV16X:
         if (lsm6dsv16xSpiAccDetect(dev)) {
             accHardware = ACC_LSM6DSV16X;
+            break;
+        }
+        FALLTHROUGH;
+#endif
+
+#ifdef USE_ACC_SPI_SH5001
+    case ACC_SH5001:
+        if (sh5001SpiAccDetect(dev)) {
+            accHardware = ACC_SH5001;
             break;
         }
         FALLTHROUGH;
