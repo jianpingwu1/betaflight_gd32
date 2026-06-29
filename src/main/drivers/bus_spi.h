@@ -95,7 +95,11 @@ typedef enum SPIDevice {
 } SPIDevice;
 
 #if defined(STM32F4) || defined(GD32F4)
+#if defined(GD32F460)
+#define SPIDEV_COUNT 6
+#else
 #define SPIDEV_COUNT 3
+#endif
 #elif defined(STM32F7)
 #define SPIDEV_COUNT 4
 #elif defined(STM32H7) || defined(GD32H7)
