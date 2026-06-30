@@ -248,14 +248,21 @@ bool spiInternalReadWriteBufPolled(SPI_TypeDef *instance, const uint8_t *txData,
 
 void spiInternalInitStream(const extDevice_t *dev, bool preInit)
 {
-    static volatile busSegment_t *segmentLocal;
-    if (preInit) {
-        segmentLocal = dev->bus->curSegment;
-    }
-    volatile busSegment_t *segment = segmentLocal;
     STATIC_DMA_DATA_AUTO uint8_t dummyTxByte = 0xff;
     STATIC_DMA_DATA_AUTO uint8_t dummyRxByte;
     busDevice_t *bus = dev->bus;
+
+    volatile busSegment_t *segment = bus->curSegment;
+
+    if (preInit) {
+        // Prepare the init structure for the next segment to reduce inter-segment interval
+        segment++;
+        if(segment->len == 0) {
+            // There's no following segment
+            return;
+        }
+    }
+
     int len = segment->len;
 
     uint8_t *txData = segment->u.buffers.txData;
