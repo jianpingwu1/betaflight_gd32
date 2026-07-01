@@ -89,6 +89,7 @@
 
 // Interrupt configuration register (Page 1)
 #define SH5001_RA_INT_CONF          0x42
+#define SH5001_RA_INT1_LENGTH       0x43
 
 // Interrupt pin mapping (Page 1)
 #define SH5001_RA_INT_PIN_MAP0      0x66
@@ -160,6 +161,14 @@
 #define SH5001_INT1_PUSHPULL        0x01   // bit[1:0]=01: INT1 push-pull
 #define SH5001_INT1_OPENDRAIN       0x02   // bit[1:0]=10: INT1 open-drain
 #define SH5001_INT2_NO_OUTPUT       0x00   // bit[3:2]=00: INT2 no output
+
+// INT1_LENGTH (0x43) value, counted by 512Hz clock when INT1 auto-clear is enabled
+#define SH5001_INT1_LENGTH_0MS      0x00
+#define SH5001_INT1_LENGTH_1_95MS   0x01
+#define SH5001_INT1_LENGTH_3_91MS   0x02
+#define SH5001_INT1_LENGTH_7_81MS   0x04
+#define SH5001_INT1_LENGTH_15_63MS  0x08
+#define SH5001_INT1_LENGTH_31_25MS  0x10
 
 // INT_ENABLE1 (0x41) bits
 #define SH5001_GYRO_DRDY_INT_EN     0x04   // bit2: gyro data ready interrupt enable

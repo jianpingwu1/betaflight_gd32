@@ -292,6 +292,8 @@ void sh5001GyroInit(gyroDev_t *gyro)
     // Configure INT1 as active high, auto-clear (pulsed), push-pull output; clear DRDY on data reads.
     spiWriteReg(dev, SH5001_RA_INT_CONF, SH5001_INT_ACTIVE_HIGH | SH5001_INT1_AUTO_CLEAR | SH5001_INT_CLEAR_ANY_READ | SH5001_INT1_PUSHPULL | SH5001_INT2_NO_OUTPUT);
 
+    spiWriteReg(dev, SH5001_RA_INT1_LENGTH, SH5001_INT1_LENGTH_1_95MS);
+
     // Enable gyro data ready interrupt and map it to INT1 without disturbing other interrupt bits.
     sh5001SetRegBits(dev, SH5001_RA_INT_ENABLE1, SH5001_GYRO_DRDY_INT_EN);
     sh5001ClearRegBits(dev, SH5001_RA_INT_PIN_MAP1, SH5001_GYRO_DRDY_INT_EN);
