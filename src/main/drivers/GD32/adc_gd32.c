@@ -100,9 +100,9 @@ static void adcInitDevice(uint32_t adc_periph, int channelCount)
 #ifdef USE_ADC_INTERNAL
     adc_special_function_config(adc_periph, ADC_SCAN_MODE, ENABLE);
 #else
-    if(channelCount > 1) 
+    if(channelCount > 1)
         adc_special_function_config(adc_periph, ADC_SCAN_MODE, ENABLE);
-    else 
+    else
         adc_special_function_config(adc_periph, ADC_SCAN_MODE, DISABLE);
 #endif
 
@@ -235,9 +235,9 @@ void adcInit(const adcConfig_t *config)
 
 
 #ifdef USE_ADC_INTERNAL
-    // If device is not ADC1 or there's no active channel, then initialize ADC1 separately
-    if (device != ADCDEV_1 || !adcActive) {
-        RCC_ClockCmd(adcHardware[ADCDEV_1].rccADC, ENABLE);
+    // If device is not ADC0 or there's no active channel, then initialize ADC1 separately
+    if (device != ADCDEV_0 || !adcActive) {
+        RCC_ClockCmd(adcHardware[ADCDEV_0].rccADC, ENABLE);
         adcInitDevice(ADC0, 2);
         adc_enable(ADC0);
     }
@@ -315,7 +315,7 @@ void adcInit(const adcConfig_t *config)
 
 
 #ifdef USE_DMA_SPEC
-    xDMA_Init(dmaSpec->ref, &dma_init_struct); 
+    xDMA_Init(dmaSpec->ref, &dma_init_struct);
     xDMA_Cmd(dmaSpec->ref, ENABLE);
 #else
     xDMA_Init(adc.dmaResource, &dma_init_struct);
