@@ -18,6 +18,18 @@ cd betaflight_gd32
 ```
 
 ### 切换到GD32F4支持分支
+
+当前仓库提供以下分支，可根据需要选择对应的GD32支持分支：
+
+| 分支 | 支持的芯片 |
+| --- | --- |
+| `2025.12.1_gd32f4_support` | GD32F4 |
+| `4.5-maintenance_gd32_support` | GD32F4、GD32H7 |
+| `4.5.1_gd32f4_support` | GD32F4 |
+| `master` | 主分支（不带GD32支持） |
+| `master_gd32f4_support` | GD32F4 |
+| `master_gd32h7_support` | GD32H7 |
+
 切换到支持GD32F4版本4.5.1的分支：
 ```bash
 git checkout 4.5.1_gd32f4_support

@@ -18,6 +18,18 @@ cd betaflight_gd32
 ```
 
 ### Switch to GD32F4 Support Branch
+
+The repository provides the following branches; choose the appropriate GD32 support branch as needed:
+
+| Branch | Supported Chips |
+| --- | --- |
+| `2025.12.1_gd32f4_support` | GD32F4 |
+| `4.5-maintenance_gd32_support` | GD32F4, GD32H7 |
+| `4.5.1_gd32f4_support` | GD32F4 |
+| `master` | Main branch (no GD32 support) |
+| `master_gd32f4_support` | GD32F4 |
+| `master_gd32h7_support` | GD32H7 |
+
 Switch to the branch that supports GD32F4 for version 4.5.1:
 ```bash
 git checkout 4.5.1_gd32f4_support
