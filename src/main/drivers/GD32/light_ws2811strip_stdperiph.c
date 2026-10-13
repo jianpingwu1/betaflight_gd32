@@ -46,6 +46,7 @@ static dmaResource_t *dmaRef = NULL;
 #error "No MCU definition in light_ws2811strip_stdperiph.c"
 #endif
 static TIM_TypeDef *timer = NULL;
+static uint16_t timerDmaSrc;
 
 static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
 {
@@ -63,10 +64,12 @@ static void WS2811_DMA_IRQHandler(dmaChannelDescriptor_t *descriptor)
             counter = 0;
             ws2811LedDataTransferInProgress = false;
             xDMA_Cmd(descriptor->ref, DISABLE);
+            timer_dma_disable((uint32_t)timer, timerDmaSrc);
         }
 #else
         ws2811LedDataTransferInProgress = false;
         xDMA_Cmd(descriptor->ref, DISABLE);
+        timer_dma_disable((uint32_t)timer, timerDmaSrc);
 #endif
 
         DMA_CLEAR_FLAG(descriptor, DMA_INT_FLAG_FTF);
@@ -151,11 +154,11 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         timer_ocintpara.outputnstate = TIMER_CCXN_ENABLE;
         timer_ocintpara.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
-        timer_ocintpara.ocnpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OCN_IDLE_STATE_LOW : TIMER_OCN_POLARITY_HIGH;
+        timer_ocintpara.ocnpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OCN_POLARITY_LOW : TIMER_OCN_POLARITY_HIGH;
     } else {
         timer_ocintpara.outputstate = TIMER_CCX_ENABLE;
         timer_ocintpara.ocidlestate  = TIMER_OC_IDLE_STATE_HIGH;
-        timer_ocintpara.ocpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_IDLE_STATE_LOW : TIMER_OC_POLARITY_HIGH;
+        timer_ocintpara.ocpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_POLARITY_LOW : TIMER_OC_POLARITY_HIGH;
     }
 
     timer_channel_output_pulse_value_config((uint32_t)timer, timerHardware->channel, 0);
@@ -210,8 +213,8 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 #endif
 
     xDMA_Init(dmaRef, &dma_init_struct);
-    timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
-
+    timer_channel_dma_request_source_select((uint32_t)timer, TIMER_DMAREQUEST_UPDATEEVENT);
+    timerDmaSrc = timerDmaSource(timerHardware->channel);
     xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
 
     return true;
@@ -222,8 +225,10 @@ void ws2811LedStripDMAEnable(void)
     xDMA_SetCurrDataCounter(dmaRef, WS2811_DMA_BUFFER_SIZE);  // load number of bytes to be transferred
 
     timer_counter_value_config((uint32_t)timer, 0);
+    timer_flag_clear((uint32_t)timer, TIMER_FLAG_UP);
     timer_enable((uint32_t)timer);
 
     xDMA_Cmd(dmaRef, ENABLE);
+    timer_dma_enable((uint32_t)timer, timerDmaSrc);
 }
 #endif
