@@ -921,7 +921,7 @@ uint16_t timerDmaSource(uint8_t channel)
 
 uint16_t timerGetPrescalerByDesiredMhz(void *tim, uint16_t mhz)
 {
-    return timerGetPrescalerByDesiredHertz(&tim, MHZ_TO_HZ(mhz));
+    return timerGetPrescalerByDesiredHertz(tim, MHZ_TO_HZ(mhz));
 }
 
 uint16_t timerGetPeriodByPrescaler(void *tim, uint16_t prescaler, uint32_t hz)
