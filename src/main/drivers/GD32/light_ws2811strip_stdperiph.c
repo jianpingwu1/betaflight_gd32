@@ -149,11 +149,11 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
     if (timerHardware->output & TIMER_OUTPUT_N_CHANNEL) {
         timer_ocintpara.outputnstate = TIMER_CCXN_ENABLE;
         timer_ocintpara.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
-        timer_ocintpara.ocnpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OCN_IDLE_STATE_LOW : TIMER_OCN_POLARITY_HIGH;
+        timer_ocintpara.ocnpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OCN_POLARITY_LOW : TIMER_OCN_POLARITY_HIGH;
     } else {
         timer_ocintpara.outputstate = TIMER_CCX_ENABLE;
         timer_ocintpara.ocidlestate  = TIMER_OC_IDLE_STATE_HIGH;
-        timer_ocintpara.ocpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_IDLE_STATE_LOW : TIMER_OC_POLARITY_HIGH;
+        timer_ocintpara.ocpolarity  = (timerHardware->output & TIMER_OUTPUT_INVERTED) ? TIMER_OC_POLARITY_LOW : TIMER_OC_POLARITY_HIGH;
     }
 
     timer_channel_output_pulse_value_config((uint32_t)timer, timerHardware->channel, 0);
@@ -214,6 +214,9 @@ bool ws2811LedStripHardwareInit(ioTag_t ioTag)
 
     // gd32_dma_init((uint32_t)dmaRef, &dma_init_struct);
     xDMA_Init((uint32_t)dmaRef, &dma_init_struct);
+#if defined(GD32F4)
+    timer_channel_dma_request_source_select((uint32_t)timer, TIMER_DMAREQUEST_UPDATEEVENT);
+#endif
     timer_dma_enable((uint32_t)timer, timerDmaSource(timerHardware->channel));
     xDMA_ITConfig(dmaRef, DMA_INT_FTF, ENABLE);
 
