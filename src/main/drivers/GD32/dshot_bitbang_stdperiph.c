@@ -46,14 +46,31 @@
 
 #include "pg/motor.h"
 
+#if defined(GD32H7)
+// On GD32H7 writing the GPIO_CTL mode bits from output to input makes the pin glitch low,
+// which corrupts bidirectional DShot. The pins therefore stay in output mode and are released
+// by switching the output type from push-pull to open-drain (output data is high), the pin
+// level is still read back through GPIO_ISTAT.
+// gpioModeMask/Input/Output hold one bit per pin and are applied to GPIO_OMODE.
+#define BB_MODE_REG(gpio) GPIO_OMODE(gpio)
+#else
+#define BB_MODE_REG(gpio) GPIO_CTL(gpio)
+#endif
+
 void bbGpioSetup(bbMotor_t *bbMotor)
 {
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
+#if defined(GD32H7)
+    bbPort->gpioModeMask |= (1U << pinIndex);
+    bbPort->gpioModeInput |= ((uint32_t)GPIO_OTYPE_OD << pinIndex);
+    bbPort->gpioModeOutput |= ((uint32_t)GPIO_OTYPE_PP << pinIndex);
+#else
     bbPort->gpioModeMask |= (CTL_CLTR(3) << (pinIndex * 2));
     bbPort->gpioModeInput |= (GPIO_MODE_INPUT << (pinIndex * 2));
     bbPort->gpioModeOutput |= (GPIO_MODE_OUTPUT << (pinIndex * 2));
+#endif
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -152,7 +169,7 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
 
      // Set GPIO to output
      ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-         MODIFY_REG(GPIO_CTL((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeOutput);
+         MODIFY_REG(BB_MODE_REG((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeOutput);
      }
 
      // Reinitialize port group DMA for output
@@ -184,7 +201,7 @@ static void bbSaveDMARegs(dmaResource_t *dmaResource, dmaRegCache_t *dmaRegCache
      // Set GPIO to input
 
      ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-         MODIFY_REG(GPIO_CTL((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeInput);
+         MODIFY_REG(BB_MODE_REG((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeInput);
      }
 
      // Reinitialize port group DMA for input
