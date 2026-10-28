@@ -71,6 +71,10 @@
     LPUART_BUFFER(UART_TX_BUFFER_ATTRIBUTE, n, T); \
     LPUART_BUFFER(UART_RX_BUFFER_ATTRIBUTE, n, R); struct dummy_s
 
+#ifdef USE_UART0
+UART_BUFFERS(0);
+#endif
+
 #ifdef USE_UART1
 UART_BUFFERS(1);
 #endif
@@ -474,7 +478,7 @@ void uartConfigureDma(uartDevice_t *uartdev)
 
 #ifdef USE_GDBSP_DRIVER
 #ifdef USE_UART0
-UART_IRQHandler(USART, 0, UARTDEV_1) // USART1 Rx/Tx IRQ Handler
+UART_IRQHandler(USART, 0, UARTDEV_0) // USART0 Rx/Tx IRQ Handler
 
 #ifdef USE_UART1
 UART_IRQHandler(USART, 1, UARTDEV_1) // USART1 Rx/Tx IRQ Handler

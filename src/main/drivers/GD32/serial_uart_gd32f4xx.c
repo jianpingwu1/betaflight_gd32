@@ -42,6 +42,166 @@
 #include "drivers/serial_uart_impl.h"
 
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
+#if defined(USE_UART0)
+// GD32 native numbering: UARTn is hardware USARTn/UARTn
+#ifdef USE_UART0
+    {
+        .device = UARTDEV_0,
+        .reg = (void *)USART0,
+        .rxDMAChannel = DMA_SUBPERI4,
+        .txDMAChannel = DMA_SUBPERI4,
+#ifdef USE_UART0_RX_DMA
+        .rxDMAResource = &(dmaResource_t){DMA1, DMA_CH5},
+#endif
+#ifdef USE_UART0_TX_DMA
+        .txDMAResource = &(dmaResource_t){DMA1, DMA_CH7},
+#endif
+        .rxPins = { { DEFIO_TAG_E(PA10) }, { DEFIO_TAG_E(PB3) }, { DEFIO_TAG_E(PB7) }, },
+        .txPins = { { DEFIO_TAG_E(PA9) }, { DEFIO_TAG_E(PA15) }, { DEFIO_TAG_E(PB6) }, },
+        .af = GPIO_AF_7,
+        .rcc = RCC_APB2(USART0),
+        .irqn = USART0_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART0_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART0,
+        .txBuffer = uart0TxBuffer,
+        .rxBuffer = uart0RxBuffer,
+        .txBufferSize = sizeof(uart0TxBuffer),
+        .rxBufferSize = sizeof(uart0RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART1
+    {
+        .device = UARTDEV_1,
+        .reg = (void *)USART1,
+        .rxDMAChannel = DMA_SUBPERI4,
+        .txDMAChannel = DMA_SUBPERI4,
+#ifdef USE_UART1_RX_DMA
+        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH5},
+#endif
+#ifdef USE_UART1_TX_DMA
+        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH6},
+#endif
+        .rxPins = { { DEFIO_TAG_E(PA3) }, { DEFIO_TAG_E(PD6) } },
+        .txPins = { { DEFIO_TAG_E(PA2) }, { DEFIO_TAG_E(PD5) } },
+        .af = GPIO_AF_7,
+        .rcc = RCC_APB1(USART1),
+        .irqn = USART1_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART1_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART1,
+        .txBuffer = uart1TxBuffer,
+        .rxBuffer = uart1RxBuffer,
+        .txBufferSize = sizeof(uart1TxBuffer),
+        .rxBufferSize = sizeof(uart1RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART2
+    {
+        .device = UARTDEV_2,
+        .reg = (void *)USART2,
+        .rxDMAChannel = DMA_SUBPERI4,
+        .txDMAChannel = DMA_SUBPERI4,
+#ifdef USE_UART2_RX_DMA
+        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH1},
+#endif
+#ifdef USE_UART2_TX_DMA
+        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH3},
+#endif
+        .rxPins = { { DEFIO_TAG_E(PB11) }, { DEFIO_TAG_E(PC11) }, { DEFIO_TAG_E(PD9) } },
+        .txPins = { { DEFIO_TAG_E(PB10) }, { DEFIO_TAG_E(PC10) }, { DEFIO_TAG_E(PD8) } },
+        .af = GPIO_AF_7,
+        .rcc = RCC_APB1(USART2),
+        .irqn = USART2_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART2_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART2,
+        .txBuffer = uart2TxBuffer,
+        .rxBuffer = uart2RxBuffer,
+        .txBufferSize = sizeof(uart2TxBuffer),
+        .rxBufferSize = sizeof(uart2RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART3
+    {
+        .device = UARTDEV_3,
+        .reg = (void *)UART3,
+        .rxDMAChannel = DMA_SUBPERI4,
+        .txDMAChannel = DMA_SUBPERI4,
+#ifdef USE_UART3_RX_DMA
+        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH2},
+#endif
+#ifdef USE_UART3_TX_DMA
+        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH4},
+#endif
+        .rxPins = { { DEFIO_TAG_E(PA1) }, { DEFIO_TAG_E(PC11) } },
+        .txPins = { { DEFIO_TAG_E(PA0) }, { DEFIO_TAG_E(PC10) } },
+        .af = GPIO_AF_8,
+        .rcc = RCC_APB1(UART3),
+        .irqn = UART3_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART3_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART3,
+        .txBuffer = uart3TxBuffer,
+        .rxBuffer = uart3RxBuffer,
+        .txBufferSize = sizeof(uart3TxBuffer),
+        .rxBufferSize = sizeof(uart3RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART4
+    {
+        .device = UARTDEV_4,
+        .reg = (void *)UART4,
+        .rxDMAChannel = DMA_SUBPERI4,
+        .txDMAChannel = DMA_SUBPERI4,
+#ifdef USE_UART4_RX_DMA
+        .rxDMAResource = &(dmaResource_t){DMA0, DMA_CH0},
+#endif
+#ifdef USE_UART4_TX_DMA
+        .txDMAResource = &(dmaResource_t){DMA0, DMA_CH7},
+#endif
+        .rxPins = { { DEFIO_TAG_E(PD2) } },
+        .txPins = { { DEFIO_TAG_E(PC12) } },
+        .af = GPIO_AF_8,
+        .rcc = RCC_APB1(UART4),
+        .irqn = UART4_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART4_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART4,
+        .txBuffer = uart4TxBuffer,
+        .rxBuffer = uart4RxBuffer,
+        .txBufferSize = sizeof(uart4TxBuffer),
+        .rxBufferSize = sizeof(uart4RxBuffer),
+    },
+#endif
+
+#ifdef USE_UART5
+    {
+        .device = UARTDEV_5,
+        .reg = (void *)USART5,
+        .rxDMAChannel = DMA_SUBPERI5,
+        .txDMAChannel = DMA_SUBPERI5,
+#ifdef USE_UART5_RX_DMA
+        .rxDMAResource = &(dmaResource_t){DMA1, DMA_CH1},
+#endif
+#ifdef USE_UART5_TX_DMA
+        .txDMAResource = &(dmaResource_t){DMA1, DMA_CH6},
+#endif
+        .rxPins = { { DEFIO_TAG_E(PC7) }, { DEFIO_TAG_E(PG9) } },
+        .txPins = { { DEFIO_TAG_E(PC6) }, { DEFIO_TAG_E(PG14) } },
+        .af = GPIO_AF_8,
+        .rcc = RCC_APB2(USART5),
+        .irqn = USART5_IRQn,
+        .txPriority = NVIC_PRIO_SERIALUART5_TXDMA,
+        .rxPriority = NVIC_PRIO_SERIALUART5,
+        .txBuffer = uart5TxBuffer,
+        .rxBuffer = uart5RxBuffer,
+        .txBufferSize = sizeof(uart5TxBuffer),
+        .rxBufferSize = sizeof(uart5RxBuffer),
+    },
+#endif
+
+#else // !USE_UART0
+// Legacy numbering: UARTn is hardware index n-1
 #ifdef USE_UART1
     {
         .device = UARTDEV_1,
@@ -199,6 +359,7 @@ const uartHardware_t uartHardware[UARTDEV_COUNT] = {
     },
 #endif
 
+#endif // USE_UART0
 };
 
 
