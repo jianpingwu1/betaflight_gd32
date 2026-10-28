@@ -41,7 +41,7 @@ typedef enum {
     UARTDEV_6 = 6,
     UARTDEV_7 = 7,
     UARTDEV_8 = 8,
-    UARTDEV_9 = 8,
+    UARTDEV_9 = 9,
     UARTDEV_10 = 10,
     LPUARTDEV_1 = 11,
     UARTDEV_COUNT

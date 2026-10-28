@@ -59,6 +59,10 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 {
     pSerialPinConfig = serialPinConfigToUse;
 
+#ifdef USE_UART0
+    initInverter(SERIAL_PORT_USART0);
+#endif
+
 #ifdef USE_UART1
     initInverter(SERIAL_PORT_USART1);
 #endif
@@ -89,6 +93,43 @@ void initInverters(const serialPinConfig_t *serialPinConfigToUse)
 void enableInverter(USART_TypeDef *USARTx, bool on)
 {
     int identifier = SERIAL_PORT_NONE;
+
+#if defined(USE_UART0)
+    if (USARTx == (void *)USART0) {
+        identifier = SERIAL_PORT_USART0;
+    }
+
+#ifdef USE_UART1
+    if (USARTx == (void *)USART1) {
+        identifier = SERIAL_PORT_USART1;
+    }
+#endif
+
+#ifdef USE_UART2
+    if (USARTx == (void *)USART2) {
+        identifier = SERIAL_PORT_USART2;
+    }
+#endif
+
+#ifdef USE_UART3
+    if (USARTx == (void *)UART3) {
+        identifier = SERIAL_PORT_USART3;
+    }
+#endif
+
+#ifdef USE_UART4
+    if (USARTx == (void *)UART4) {
+        identifier = SERIAL_PORT_UART4;
+    }
+#endif
+
+#ifdef USE_UART5
+    if (USARTx == (void *)USART5) {
+        identifier = SERIAL_PORT_UART5;
+    }
+#endif
+
+#else // !USE_UART0
 
 #ifdef USE_UART1
     if (USARTx == (void *)USART0) {
@@ -125,6 +166,8 @@ void enableInverter(USART_TypeDef *USARTx, bool on)
         identifier = SERIAL_PORT_USART6;
     }
 #endif
+
+#endif // USE_UART0
 
     if (identifier != SERIAL_PORT_NONE) {
         inverterSet(identifier, on);

@@ -242,7 +242,14 @@ static const serialDefaultPin_t serialDefaultPin[] = {
 #endif
 };
 
-PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, 0);
+// serialPinConfig_t layout differs with USE_UART0 (SERIAL_PORT_MAX_INDEX 12 vs 11)
+#if defined(USE_UART0)
+#define SERIAL_PIN_CONFIG_PG_VERSION 1
+#else
+#define SERIAL_PIN_CONFIG_PG_VERSION 0
+#endif
+
+PG_REGISTER_WITH_RESET_FN(serialPinConfig_t, serialPinConfig, PG_SERIAL_PIN_CONFIG, SERIAL_PIN_CONFIG_PG_VERSION);
 
 void pgResetFn_serialPinConfig(serialPinConfig_t *serialPinConfig)
 {

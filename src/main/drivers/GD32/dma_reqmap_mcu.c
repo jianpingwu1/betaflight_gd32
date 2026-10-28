@@ -70,6 +70,7 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_SDIO,    0,         { DMA(1, 3, 4), DMA(1, 6, 4) } },
 #endif
 
+#if defined(USE_UART0)
 #ifdef USE_UART0
     { DMA_PERIPH_UART_TX, UARTDEV_0, { DMA(1, 7, 4) } },
     { DMA_PERIPH_UART_RX, UARTDEV_0, { DMA(1, 5, 4), DMA(1, 2, 4) } },
@@ -94,6 +95,32 @@ static const dmaPeripheralMapping_t dmaPeripheralMapping[] = {
     { DMA_PERIPH_UART_TX, UARTDEV_5, { DMA(1, 6, 5), DMA(1, 7, 5) } },
     { DMA_PERIPH_UART_RX, UARTDEV_5, { DMA(1, 1, 5), DMA(1, 2, 5) } },
 #endif
+#else // !USE_UART0: UARTn is hardware index n-1
+#ifdef USE_UART1
+    { DMA_PERIPH_UART_TX, UARTDEV_1, { DMA(1, 7, 4) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_1, { DMA(1, 5, 4), DMA(1, 2, 4) } },
+#endif
+#ifdef USE_UART2
+    { DMA_PERIPH_UART_TX, UARTDEV_2, { DMA(0, 6, 4) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_2, { DMA(0, 5, 4) } },
+#endif
+#ifdef USE_UART3
+    { DMA_PERIPH_UART_TX, UARTDEV_3, { DMA(0, 3, 4) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_3, { DMA(0, 1, 4) } },
+#endif
+#ifdef USE_UART4
+    { DMA_PERIPH_UART_TX, UARTDEV_4, { DMA(0, 4, 4) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_4, { DMA(0, 2, 4) } },
+#endif
+#ifdef USE_UART5
+    { DMA_PERIPH_UART_TX, UARTDEV_5, { DMA(0, 7, 4) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_5, { DMA(0, 0, 4) } },
+#endif
+#ifdef USE_UART6
+    { DMA_PERIPH_UART_TX, UARTDEV_6, { DMA(1, 6, 5), DMA(1, 7, 5) } },
+    { DMA_PERIPH_UART_RX, UARTDEV_6, { DMA(1, 1, 5), DMA(1, 2, 5) } },
+#endif
+#endif // USE_UART0
 };
 
 #define TC(chan) DEF_TIM_CHANNEL(CH_ ## chan)

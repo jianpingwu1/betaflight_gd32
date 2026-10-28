@@ -455,6 +455,9 @@ serialPort_t *openSerialPort(
 #endif
 
 #if defined(USE_UART)
+#ifdef USE_UART0
+        case SERIAL_PORT_USART0:
+#endif
 #ifdef USE_UART1
         case SERIAL_PORT_USART1:
 #endif

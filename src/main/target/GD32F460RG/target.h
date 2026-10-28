@@ -57,12 +57,16 @@
 #endif
 
 // #define USE_UART0
+
+// Define USE_UART0 in config.h for GD32 native numbering (UART0..UART5), otherwise legacy UART1..UART6
 #define USE_UART1
 #define USE_UART2
 #define USE_UART3
 #define USE_UART4
 #define USE_UART5
+#ifndef USE_UART0
 #define USE_UART6
+#endif
 
 #ifdef USE_UART0
 #define SERIAL_UART_FIRST_INDEX    0
@@ -70,7 +74,10 @@
 #define NVIC_PRIO_SERIALUART1_TXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1_RXDMA        NVIC_BUILD_PRIORITY(1, 1)
 #define NVIC_PRIO_SERIALUART1              NVIC_BUILD_PRIORITY(1, 1)
+#endif
 
+#if defined(USE_UART0) && (defined(UART6_TX_PIN) || defined(UART6_RX_PIN) || defined(INVERTER_PIN_UART6))
+#error "USE_UART0 requires 0-based UART names (UART0..UART5) in config.h"
 #endif
 
 #define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 6)
