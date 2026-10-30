@@ -747,7 +747,9 @@ static inline void timUpdateHandler(TIM_TypeDef *tim, timerConfig_t *timerConfig
 
 #if USED_TIMERS & TIM_N(0)
 _TIM_IRQ_HANDLER(TIMER0_Channel_IRQHandler, 0);
-#  if USED_TIMERS & TIM_N(9)
+#  if defined(GD32H7)
+_TIM_IRQ_HANDLER(TIMER0_UP_IRQHandler, 0);
+#  elif USED_TIMERS & TIM_N(9)
 _TIM_IRQ_HANDLER2(TIMER0_UP_TIMER9_IRQHandler, 0, 9);  // both timers are in use
 #  else
 _TIM_IRQ_HANDLER(TIMER0_UP_TIMER9_IRQHandler, 0);      // timer9 is not used
@@ -769,7 +771,11 @@ _TIM_IRQ_HANDLER(TIMER4_IRQHandler, 4);
 
 #if USED_TIMERS & TIM_N(5)
 #  if !(defined(USE_PID_AUDIO))
+#    if defined(GD32H7)
+_TIM_IRQ_HANDLER(TIMER5_DAC_UDR_IRQHandler, 5);
+#    else
 _TIM_IRQ_HANDLER(TIMER5_DAC_IRQHandler, 5);
+#    endif
 #  endif
 #endif
 
@@ -782,7 +788,9 @@ _TIM_IRQ_HANDLER_UPDATE_ONLY(TIMER6_IRQHandler, 6);
 #if USED_TIMERS & TIM_N(7)
 _TIM_IRQ_HANDLER(TIMER7_Channel_IRQHandler, 7);
 
-#  if USED_TIMERS & TIM_N(12)
+#  if defined(GD32H7)
+_TIM_IRQ_HANDLER(TIMER7_UP_IRQHandler, 7);
+#  elif USED_TIMERS & TIM_N(12)
 _TIM_IRQ_HANDLER2(TIMER7_UP_TIMER12_IRQHandler, 7, 12);  // both timers are in use
 #  else
 _TIM_IRQ_HANDLER(TIMER7_UP_TIMER12_IRQHandler, 7);       // timer12 is not used
@@ -800,6 +808,15 @@ _TIM_IRQ_HANDLER(TIMER7_BRK_TIMER11_IRQHandler, 11);
 #endif
 #if USED_TIMERS & TIM_N(13)
 _TIM_IRQ_HANDLER(TIMER7_TRG_CMT_TIMER13_IRQHandler, 13);
+#endif
+#if USED_TIMERS & TIM_N(14)
+_TIM_IRQ_HANDLER(TIMER14_IRQHandler, 14);
+#endif
+#if USED_TIMERS & TIM_N(15)
+_TIM_IRQ_HANDLER(TIMER15_IRQHandler, 15);
+#endif
+#if USED_TIMERS & TIM_N(16)
+_TIM_IRQ_HANDLER(TIMER16_IRQHandler, 16);
 #endif
 
 void timerInit(void)
@@ -847,6 +864,12 @@ void timerForceOverflow(TIM_TypeDef *tim)
 
 void timerOCInit(TIM_TypeDef *tim, uint8_t channel, TIM_OCInitTypeDef *init)
 {
+#if defined(GD32H7)
+    // MCHx resets to independent mode on H7; complementary mode makes it follow CHx like CHxN
+    if (init->outputnstate == TIMER_CCXN_ENABLE) {
+        timer_multi_mode_channel_mode_config((uint32_t)tim, channel, TIMER_MCH_MODE_COMPLEMENTARY);
+    }
+#endif
     timer_channel_output_config((uint32_t)tim, (uint16_t)channel, init);
 }
 
