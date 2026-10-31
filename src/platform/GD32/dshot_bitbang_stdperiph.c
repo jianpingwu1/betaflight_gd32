@@ -44,14 +44,29 @@
 #include "drivers/timer.h"
 #include "pg/motor.h"
 
+#if defined(GD32H7)
+// Writing GPIO_CTL from output to input glitches the pin low, so the pins stay in output mode and
+// are released via GPIO_OMODE (open drain, data high); GPIO_ISTAT still reads the pad.
+// gpioModeMask/Input/Output are one bit per pin and apply to GPIO_OMODE.
+#define BB_MODE_REG(gpio) GPIO_OMODE(gpio)
+#else
+#define BB_MODE_REG(gpio) GPIO_CTL(gpio)
+#endif
+
 void bbGpioSetup(bbMotor_t *bbMotor)
 {
     bbPort_t *bbPort = bbMotor->bbPort;
     int pinIndex = bbMotor->pinIndex;
 
+#if defined(GD32H7)
+    bbPort->gpioModeMask |= (1U << pinIndex);
+    bbPort->gpioModeInput |= ((uint32_t)GPIO_OTYPE_OD << pinIndex);
+    bbPort->gpioModeOutput |= ((uint32_t)GPIO_OTYPE_PP << pinIndex);
+#else
     bbPort->gpioModeMask |= (CTL_CLTR(3) << (pinIndex * 2));
     bbPort->gpioModeInput |= (GPIO_MODE_INPUT << (pinIndex * 2));
     bbPort->gpioModeOutput |= (GPIO_MODE_OUTPUT << (pinIndex * 2));
+#endif
 
 #ifdef USE_DSHOT_TELEMETRY
     if (useDshotTelemetry) {
@@ -148,7 +163,7 @@ void bbSwitchToOutput(bbPort_t * bbPort)
 
     // Set GPIO to output
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-        MODIFY_REG(GPIO_CTL((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeOutput);
+        MODIFY_REG(BB_MODE_REG((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeOutput);
     }
 
     // Reinitialize port group DMA for output
@@ -180,7 +195,7 @@ void bbSwitchToInput(bbPort_t *bbPort)
     // Set GPIO to input
 
     ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
-        MODIFY_REG(GPIO_CTL((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeInput);
+        MODIFY_REG(BB_MODE_REG((uint32_t)bbPort->gpio), bbPort->gpioModeMask, bbPort->gpioModeInput);
     }
 
     // Reinitialize port group DMA for input
