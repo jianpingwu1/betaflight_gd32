@@ -44,6 +44,10 @@ const timerDef_t timerDefinitions[HARDWARE_TIMER_DEFINITION_COUNT] = {
     { .TIMx = (void *)TIMER6,  .rcc = RCC_APB1(TIMER6),  .inputIrq = TIMER6_IRQn},
 
     { .TIMx = (void *)TIMER7,  .rcc = RCC_APB2(TIMER7),  .inputIrq = TIMER7_Channel_IRQn},
+
+    { .TIMx = (void *)TIMER14, .rcc = RCC_APB2(TIMER14), .inputIrq = TIMER14_IRQn},
+    { .TIMx = (void *)TIMER15, .rcc = RCC_APB2(TIMER15), .inputIrq = TIMER15_IRQn},
+    { .TIMx = (void *)TIMER16, .rcc = RCC_APB2(TIMER16), .inputIrq = TIMER16_IRQn},
 };
 
 #if defined(USE_TIMER_MGMT)
@@ -72,6 +76,11 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIMER(TIMER7, CH0N, PA5, 0, 0, 0),
     DEF_TIMER(TIMER7, CH0N, PA7, 0, 0, 0),
 
+    // appended after existing entries so TIMER_PIN_MAP occurrence indices stay unchanged
+    DEF_TIMER(TIMER14, CH0N, PA1, 0, 0, 0),
+    DEF_TIMER(TIMER14, CH0,  PA2, 0, 0, 0),
+    DEF_TIMER(TIMER14, CH1,  PA3, 0, 0, 0),
+
 
 //PORTB
     DEF_TIMER(TIMER0, CH1N, PB0, 0, 0, 0),
@@ -97,6 +106,11 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIMER(TIMER7,  CH1N, PB14, 0, 0, 0),
     DEF_TIMER(TIMER7,  CH2N, PB15, 0, 0, 0),
 
+    DEF_TIMER(TIMER15, CH0N, PB6, 0, 0, 0),
+    DEF_TIMER(TIMER16, CH0N, PB7, 0, 0, 0),
+    DEF_TIMER(TIMER15, CH0,  PB8, 0, 0, 0),
+    DEF_TIMER(TIMER16, CH0,  PB9, 0, 0, 0),
+
 
 
 //PORTC
@@ -112,6 +126,8 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIMER(TIMER7, CH1, PC7, 0, 0, 0),
     DEF_TIMER(TIMER7, CH2, PC8, 0, 0, 0),
     DEF_TIMER(TIMER7, CH3, PC9, 0, 0, 0),
+
+    DEF_TIMER(TIMER14, CH0, PC12, 0, 0, 0),
 
 //PORTD
     DEF_TIMER(TIMER7, CH2, PD0, 0, 0, 0),
@@ -130,6 +146,10 @@ const timerHardware_t fullTimerHardware[FULL_TIMER_CHANNEL_COUNT] = {
     DEF_TIMER(TIMER0, CH2N, PE12, 0, 0, 0),
     DEF_TIMER(TIMER0, CH2,  PE13, 0, 0, 0),
     DEF_TIMER(TIMER0, CH3,  PE14, 0, 0, 0),
+
+    DEF_TIMER(TIMER14, CH0N, PE4, 0, 0, 0),
+    DEF_TIMER(TIMER14, CH0,  PE5, 0, 0, 0),
+    DEF_TIMER(TIMER14, CH1,  PE6, 0, 0, 0),
 
 
 //PORTF
