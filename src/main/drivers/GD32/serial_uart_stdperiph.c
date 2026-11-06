@@ -54,6 +54,34 @@ static void usartConfigurePinInversion(uartPort_t *uartPort)
 #endif
 }
 
+// GD32F4 RX with STB=2 rejects a start bit inside the 2nd stop bit, so BIDIR TX ports only use STB=2 while sending
+static bool uartSplitStopBits(const uartPort_t *uartPort)
+{
+#if defined(GD32F4)
+    return (uartPort->port.options & (SERIAL_BIDIR | SERIAL_STOPBITS_2)) == (SERIAL_BIDIR | SERIAL_STOPBITS_2)
+        && (uartPort->port.mode & MODE_TX);
+#else
+    UNUSED(uartPort);
+    return false;
+#endif
+}
+
+void uartSetTxStopBits(uartPort_t *uartPort, bool tx)
+{
+    if (!uartSplitStopBits(uartPort)) {
+        return;
+    }
+
+    const uint32_t periph = (uint32_t)uartPort->USARTx;
+    const uint32_t stb = tx ? USART_STB_2BIT : USART_STB_1BIT;
+    const uint32_t ctl1 = USART_CTL1(periph);
+
+    // single store: usart_stop_bit_set() clears STB first, which could corrupt a frame in flight
+    if ((ctl1 & USART_CTL1_STB) != stb) {
+        USART_CTL1(periph) = (ctl1 & ~USART_CTL1_STB) | stb;
+    }
+}
+
 void uartReconfigure(uartPort_t *uartPort)
 {
     usart_deinit((uint32_t)uartPort->USARTx);
@@ -66,7 +94,7 @@ void uartReconfigure(uartPort_t *uartPort)
         usart_word_length_set((uint32_t)uartPort->USARTx, USART_WL_8BIT);
     }
 
-    if(uartPort->port.options & SERIAL_STOPBITS_2) {
+    if ((uartPort->port.options & SERIAL_STOPBITS_2) && !uartSplitStopBits(uartPort)) {
         usart_stop_bit_set((uint32_t)uartPort->USARTx, USART_STB_2BIT);
     } else {
         usart_stop_bit_set((uint32_t)uartPort->USARTx, USART_STB_1BIT);
@@ -228,6 +256,7 @@ void uartTryStartTxDMA(uartPort_t *s)
         s->txDMAEmpty = false;
         xDMA_SetCurrDataCounter(s->txDMAResource, chunk);
     reenable:
+        uartSetTxStopBits(s, true);
         xDMA_Cmd(s->txDMAResource, ENABLE);
     }
 }
