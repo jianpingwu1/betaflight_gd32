@@ -41,6 +41,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/serial_uart_impl.h"
 
+void uartSetTxStopBits(uartPort_t *uartPort, bool tx); // serial_uart_stdperiph.c
+
 const uartHardware_t uartHardware[UARTDEV_COUNT] = {
 #ifdef USE_UART1
     {
@@ -364,11 +366,20 @@ void uartIrqHandler(uartPort_t *s)
     if (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_TC) == SET) {
         uartTxMonitor(s);
 
+        if (s->port.txBufferTail == s->port.txBufferHead
+#ifdef USE_DMA
+            && !(s->txDMAResource && IS_DMA_ENABLED(s->txDMAResource))
+#endif
+            ) {
+            uartSetTxStopBits(s, false);
+        }
+
         usart_interrupt_flag_clear((uint32_t)s->USARTx, USART_INT_FLAG_TC);
     }
 
     if (!s->txDMAResource && (usart_interrupt_flag_get((uint32_t)s->USARTx, USART_INT_FLAG_TBE) == SET)) {
         if (s->port.txBufferTail != s->port.txBufferHead) {
+            uartSetTxStopBits(s, true);
             usart_data_transmit((uint32_t)s->USARTx, s->port.txBuffer[s->port.txBufferTail]);
             s->port.txBufferTail = (s->port.txBufferTail + 1) % s->port.txBufferSize;
         } else {
