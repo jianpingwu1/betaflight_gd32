@@ -28,10 +28,12 @@
 #ifdef USE_DSHOT
 
 #include "build/debug.h"
+#include "build/atomic.h"
 
 #include "drivers/dma.h"
 #include "drivers/dma_reqmap.h"
 #include "drivers/io.h"
+#include "drivers/io_impl.h"
 #include "drivers/nvic.h"
 #include "platform/rcc.h"
 #include "drivers/time.h"
@@ -62,7 +64,15 @@ void dshotEnableChannels(unsigned motorCount)
         if (dmaMotors[i].output & TIMER_OUTPUT_N_CHANNEL) {
             timer_channel_complementary_output_state_config((uint32_t)(dmaMotors[i].timerHardware->tim), dmaMotors[i].timerHardware->channel, TIMER_CCXN_ENABLE);
         } else {
+#if defined(GD32H7)
+            // H7 library clears CHxEN before setting it, which glitches the pad; write once like GD32F4
+            const uint32_t tim = (uint32_t)dmaMotors[i].timerHardware->tim;
+            const uint32_t shift = dmaMotors[i].timerHardware->channel * 4U;
+
+            TIMER_CHCTL2(tim) |= ((uint32_t)TIMER_CCX_ENABLE << shift);
+#else
             timer_channel_output_state_config((uint32_t)(dmaMotors[i].timerHardware->tim), dmaMotors[i].timerHardware->channel, TIMER_CCX_ENABLE);
+#endif
         }
     }
 }
@@ -121,6 +131,32 @@ FAST_CODE void pwmDshotSetDirectionOutput(
 }
 
 #ifdef USE_DSHOT_TELEMETRY
+#if defined(GD32H7)
+// Clearing CHxEN while the output drives the pad glitches it low, so the pad is parked on GPIO
+// (open drain, data high) while the channel becomes the telemetry input, then handed back to the
+// timer. Only the output -> input direction needs this.
+static void pwmDshotPadToGpio(IO_t io)
+{
+    const uint32_t gpio = PERIPH_INT(IO_GPIO(io));
+    const uint32_t pin = IO_Pin(io);
+    const uint32_t shift = IO_GPIOPinIdx(io) * 2;
+
+    GPIO_BOP(gpio) = pin;
+    GPIO_OMODE(gpio) |= pin;
+    GPIO_CTL(gpio) = (GPIO_CTL(gpio) & ~(3U << shift)) | ((uint32_t)GPIO_MODE_OUTPUT << shift);
+}
+
+static void pwmDshotPadToAf(IO_t io)
+{
+    const uint32_t gpio = PERIPH_INT(IO_GPIO(io));
+    const uint32_t pin = IO_Pin(io);
+    const uint32_t shift = IO_GPIOPinIdx(io) * 2;
+
+    GPIO_CTL(gpio) = (GPIO_CTL(gpio) & ~(3U << shift)) | ((uint32_t)GPIO_MODE_AF << shift);
+    GPIO_OMODE(gpio) &= ~pin;
+}
+#endif
+
 FAST_CODE
 static void pwmDshotSetDirectionInput(
     motorDmaOutput_t * const motor
@@ -143,7 +179,17 @@ static void pwmDshotSetDirectionInput(
     timer_auto_reload_shadow_enable((uint32_t)timer);
     TIMER_CAR((uint32_t)timer) = 0xffff;
 
+#if defined(GD32H7)
+    const IO_t io = IOGetByTag(timerHardware->tag);
+
+    ATOMIC_BLOCK(NVIC_PRIO_TIMER) {
+        pwmDshotPadToGpio(io);
+        timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);
+        pwmDshotPadToAf(io);
+    }
+#else
     timer_input_capture_config((uint32_t)timer, timerHardware->channel, &motor->icInitStruct);
+#endif
 
     if (useBurstDshot) {
         pGenerDmaInit->config.init_struct_m.direction = DMA_PERIPH_TO_MEMORY;
